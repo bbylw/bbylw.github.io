@@ -1,0 +1,303 @@
+<html><head><base href="https://ai-generated-creative-websites.github.io/" />
+<title>AI生成的创意网站展示</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&family=Noto+Serif+SC:wght@400;700&display=swap');
+
+  :root {
+    --primary-color: #6200EA;
+    --secondary-color: #03DAC6;
+    --background-color: #121212;
+    --text-color: #FFFFFF;
+  }
+
+  body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans SC', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  header {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .header-content {
+    text-align: center;
+    z-index: 2;
+  }
+
+  h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeInUp 1s forwards;
+  }
+
+  .subtitle {
+    font-size: 1.5rem;
+    opacity: 0;
+    animation: fadeInUp 1s 0.5s forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ai-notice {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    padding: 50px 0;
+  }
+
+  .gallery-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    background-color: #1E1E1E;
+  }
+
+  .gallery-item:hover {
+    transform: scale(1.05);
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 200px;
+    display: block;
+    transition: transform 0.3s ease;
+    object-fit: cover;
+  }
+
+  .gallery-item:hover img {
+    transform: scale(1.1);
+  }
+
+  .gallery-item-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+
+  .gallery-item:hover .gallery-item-info {
+    transform: translateY(0);
+  }
+
+  .gallery-item-title {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+  }
+
+  .gallery-item-desc {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+
+  .cta {
+    text-align: center;
+    padding: 100px 0;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  }
+
+  .cta h2 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+
+  .cta-button {
+    display: inline-block;
+    padding: 15px 30px;
+    background-color: var(--text-color);
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .cta-button:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-5px);
+  }
+
+  footer {
+    background-color: #1a1a1a;
+    color: var(--text-color);
+    text-align: center;
+    padding: 30px 0;
+  }
+
+  .social-links {
+    margin-top: 20px;
+  }
+
+  .social-links a {
+    color: var(--text-color);
+    font-size: 1.5rem;
+    margin: 0 10px;
+    transition: color 0.3s ease;
+  }
+
+  .social-links a:hover {
+    color: var(--secondary-color);
+  }
+
+  @media (max-width: 768px) {
+    h1 {
+      font-size: 3rem;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+    }
+
+    .gallery {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .cta h2 {
+      font-size: 2rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="ai-notice">
+    本网站完全由人工智能生成，旨在展示创意可能性。
+  </div>
+
+  <header>
+    <div class="header-content">
+      <h1>AI生成的创意网站</h1>
+      <p class="subtitle">通过人工智能探索网页设计的未来</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="gallery">
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站1">
+        <div class="gallery-item-info">
+          <h3 class="gallery-item-title">量子设计界面</h3>
+          <p class="gallery-item-desc">AI对量子计算的可视化诠释</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站2">
+        <div class="gallery-item-info">
+          <h3 class="gallery-item-title">神经网络艺术</h3>
+          <p class="gallery-item-desc">机器学习与创意表达的交汇</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站3">
+        <div class="gallery-item-info">
+          <h3 class="gallery-item-title">智能网页体验</h3>
+          <p class="gallery-item-desc">随每位访客而适应进化的网站</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站4">
+        <div class="gallery-item-info">
+          <h3 class="gallery-item-title">赛博交响曲</h3>
+          <p class="gallery-item-desc">人类创意与AI精确性的和谐统一</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站5">
+        <div class="gallery-item-info">
+          <h3 class="gallery-item-title">数据织锦</h3>
+          <p class="gallery-item-desc">将复杂信息编织成视觉故事</p>
+        </div>
+      </div>
+      <div class="gallery-item">
+        <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站6">
+        <div class="gallery-item-info">
+          <h3 class="gallery-item-title">算法梦境</h3>
+          <p class="gallery-item-desc">穿越AI想象力的奇妙之旅</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="cta">
+    <h2>见证网页设计的AI革命</h2>
+    <a href="#" class="cta-button">探索更多AI创作</a>
+  </section>
+
+  <footer>
+    <p>&copy; 2023 AI生成的创意网站。本站是一个AI实验项目。</p>
+    <div class="social-links">
+      <a href="https://github.com/ai-generated-creative-websites" aria-label="GitHub"><i class="fab fa-github"></i></a>
+      <a href="https://twitter.com/AIWebDesign" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+      <a href="https://www.linkedin.com/company/ai-web-design" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+    </div>
+  </footer>
+
+  <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const galleryItems = document.querySelectorAll('.gallery-item');
+      
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+
+      const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      galleryItems.forEach(item => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(50px)';
+        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(item);
+      });
+    });
+  </script>
+</body></html>
