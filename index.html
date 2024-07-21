@@ -1,303 +1,378 @@
-<html><head><base href="https://dh.186404.xyz/" />
-<title>AI生成的创意网站展示</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&family=Noto+Serif+SC:wght@400;700&display=swap');
 
-  :root {
-    --primary-color: #6200EA;
-    --secondary-color: #03DAC6;
-    --background-color: #121212;
-    --text-color: #FFFFFF;
-  }
-
-  body, html {
-    margin: 0;
-    padding: 0;
-    font-family: 'Noto Sans SC', sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    overflow-x: hidden;
-  }
-
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
-  header {
-    position: relative;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-  }
-
+<html><head><base href="https://ai-chronicles.com/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>AI编年史 - 探索人工智能的未来</title><style>
+:root {
+  --primary: #121212;
+  --secondary: #1e1e1e;
+  --accent: #d4d4d4;
+  --background: #0a0a0a;
+  --text: #c0c0c0;
+  --card-bg: #181818;
+  --hover: #2e2e2e;
+}
+body, html {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--background);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+header {
+  background: var(--primary);
+  padding: 15px 0;
+  box-shadow: 0 2px 5px rgba(212,212,212,0.1);
+}
+h1, h2, h3 {
+  font-family: 'Noto Serif SC', serif;
+  color: var(--accent);
+}
+h1 {
+  font-size: 1.8em;
+  text-align: left;
+  margin: 0;
+  color: var(--accent);
+}
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+nav a {
+  color: var(--text);
+  text-decoration: none;
+  margin: 5px 10px;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+nav a:hover {
+  color: var(--accent);
+}
+.hero {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: var(--text);
+  padding: 60px 0;
+  text-align: center;
+}
+.hero h2 {
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: var(--accent);
+}
+.hero p {
+  font-size: 1.1em;
+  max-width: 800px;
+  margin: 0 auto 30px;
+}
+.cta-button {
+  display: inline-block;
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--accent);
+  color: var(--primary);
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  text-align: center;
+  box-sizing: border-box;
+}
+.cta-button:hover {
+  background: var(--hover);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+.content-section {
+  margin: 40px 0;
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(212,212,212,0.1);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+}
+.card {
+  background: var(--secondary);
+  border-radius: 10px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(212,212,212,0.1);
+  display: flex;
+  flex-direction: column;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(212,212,212,0.2);
+  background: var(--hover);
+}
+.card h3 {
+  color: var(--accent);
+  margin-top: 15px;
+}
+.card-icon {
+  font-size: 36px;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--accent);
+  margin-bottom: 15px;
+}
+footer {
+  background: var(--primary);
+  color: var(--text);
+  text-align: center;
+  padding: 20px 0;
+  margin-top: 40px;
+}
+.social-links a {
+  color: var(--text);
+  font-size: 24px;
+  margin: 0 10px;
+  transition: color 0.3s ease;
+}
+.social-links a:hover {
+  color: var(--accent);
+}
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.logo {
+  display: flex;
+  align-items: center;
+}
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+  color: var(--accent);
+}
+.post-meta {
+  font-size: 0.9em;
+  color: #888;
+  margin-bottom: 15px;
+}
+.tag {
+  display: inline-block;
+  background: var(--primary);
+  color: var(--accent);
+  padding: 3px 10px;
+  border-radius: 15px;
+  font-size: 0.8em;
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.logo-title {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0;
+}
+.logo-subtitle {
+  font-size: 0.8em;
+  color: var(--text);
+  margin: 0;
+}
+.card-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.card-content p:last-of-type {
+  margin-bottom: auto;
+}
+@media (max-width: 768px) {
   .header-content {
-    text-align: center;
-    z-index: 2;
+    flex-direction: column;
+    align-items: flex-start;
   }
-
-  h1 {
-    font-family: 'Noto Serif SC', serif;
-    font-size: 4rem;
-    margin-bottom: 20px;
-    opacity: 0;
-    animation: fadeInUp 1s forwards;
+  nav {
+    margin-top: 15px;
+    justify-content: flex-start;
   }
-
-  .subtitle {
-    font-size: 1.5rem;
-    opacity: 0;
-    animation: fadeInUp 1s 0.5s forwards;
+  .hero h2 {
+    font-size: 1.8em;
   }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(50px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .hero p {
+    font-size: 1em;
   }
-
-  .ai-notice {
-    background-color: var(--primary-color);
-    color: var(--text-color);
-    text-align: center;
-    padding: 10px;
-    font-weight: bold;
-  }
-
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
-    padding: 50px 0;
-  }
-
-  .gallery-item {
-    position: relative;
-    overflow: hidden;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-    background-color: #1E1E1E;
-  }
-
-  .gallery-item:hover {
-    transform: scale(1.05);
-  }
-
-  .gallery-item img {
-    width: 100%;
-    height: 200px;
-    display: block;
-    transition: transform 0.3s ease;
-    object-fit: cover;
-  }
-
-  .gallery-item:hover img {
-    transform: scale(1.1);
-  }
-
-  .gallery-item-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.7);
-    color: #fff;
+  .content-section {
     padding: 20px;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
   }
-
-  .gallery-item:hover .gallery-item-info {
-    transform: translateY(0);
+  .grid {
+    grid-template-columns: 1fr;
   }
-
-  .gallery-item-title {
-    font-size: 1.2rem;
-    margin-bottom: 5px;
-  }
-
-  .gallery-item-desc {
-    font-size: 0.9rem;
-    opacity: 0.8;
-  }
-
-  .cta {
-    text-align: center;
-    padding: 100px 0;
-    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-  }
-
-  .cta h2 {
-    font-size: 3rem;
-    margin-bottom: 20px;
-  }
-
-  .cta-button {
-    display: inline-block;
-    padding: 15px 30px;
-    background-color: var(--text-color);
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-  }
-
-  .cta-button:hover {
-    background-color: #f0f0f0;
-    transform: translateY(-5px);
-  }
-
-  footer {
-    background-color: #1a1a1a;
-    color: var(--text-color);
-    text-align: center;
-    padding: 30px 0;
-  }
-
-  .social-links {
-    margin-top: 20px;
-  }
-
-  .social-links a {
-    color: var(--text-color);
-    font-size: 1.5rem;
-    margin: 0 10px;
-    transition: color 0.3s ease;
-  }
-
-  .social-links a:hover {
-    color: var(--secondary-color);
-  }
-
-  @media (max-width: 768px) {
-    h1 {
-      font-size: 3rem;
-    }
-
-    .subtitle {
-      font-size: 1.2rem;
-    }
-
-    .gallery {
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    }
-
-    .cta h2 {
-      font-size: 2rem;
-    }
-  }
-</style>
-</head>
-<body>
-  <div class="ai-notice">
-    本网站完全由人工智能生成，旨在展示创意可能性。
-  </div>
-
+}
+</style></head><body>
   <header>
-    <div class="header-content">
-      <h1>AI生成的创意网站</h1>
-      <p class="subtitle">通过人工智能探索网页设计的未来</p>
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12C20,14.4 19,16.5 17.3,18C15.9,16.7 14,16 12,16C10,16 8.2,16.7 6.7,18C5,16.5 4,14.4 4,12A8,8 0 0,1 12,4M14,5.89C13.62,5.9 13.26,6.15 13.1,6.54L11.81,9.77L11.71,10C11,10.13 10.41,10.6 10.14,11.26C9.73,12.29 10.23,13.45 11.26,13.86C12.29,14.27 13.45,13.77 13.86,12.74C14.12,12.08 14,11.32 13.57,10.76L13.67,10.5L14.96,7.29L14.97,7.26C15.17,6.75 14.92,6.17 14.41,5.96C14.28,5.91 14.15,5.89 14,5.89M10,6A1,1 0 0,0 9,7A1,1 0 0,0 10,8A1,1 0 0,0 11,7A1,1 0 0,0 10,6M7,9A1,1 0 0,0 6,10A1,1 0 0,0 7,11A1,1 0 0,0 8,10A1,1 0 0,0 7,9M17,9A1,1 0 0,0 16,10A1,1 0 0,0 17,11A1,1 0 0,0 18,10A1,1 0 0,0 17,9Z" />
+          </svg>
+          <div class="logo-text">
+            <h1 class="logo-title">AI编年史</h1>
+            <p class="logo-subtitle">探索人工智能的未来</p>
+          </div>
+        </div>
+        <nav>
+          <a href="/">首页</a>
+          <a href="/articles">文章</a>
+          <a href="/about">关于我们</a>
+          <a href="/contact">联系我们</a>
+        </nav>
+      </div>
     </div>
   </header>
 
-  <div class="container">
-    <div class="gallery">
-      <div class="gallery-item">
-        <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站1">
-        <div class="gallery-item-info">
-          <h3 class="gallery-item-title">量子设计界面</h3>
-          <p class="gallery-item-desc">AI对量子计算的可视化诠释</p>
-        </div>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h2>探索人工智能的未来</h2>
+        <p>通过我们前沿的文章、思想实验和富有远见的预测，深入了解人工智能的迷人世界。</p>
+        <a href="/latest" class="cta-button">阅读最新文章</a>
       </div>
-      <div class="gallery-item">
-        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站2">
-        <div class="gallery-item-info">
-          <h3 class="gallery-item-title">神经网络艺术</h3>
-          <p class="gallery-item-desc">机器学习与创意表达的交汇</p>
-        </div>
-      </div>
-      <div class="gallery-item">
-        <img src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站3">
-        <div class="gallery-item-info">
-          <h3 class="gallery-item-title">智能网页体验</h3>
-          <p class="gallery-item-desc">随每位访客而适应进化的网站</p>
-        </div>
-      </div>
-      <div class="gallery-item">
-        <img src="https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站4">
-        <div class="gallery-item-info">
-          <h3 class="gallery-item-title">赛博交响曲</h3>
-          <p class="gallery-item-desc">人类创意与AI精确性的和谐统一</p>
-        </div>
-      </div>
-      <div class="gallery-item">
-        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站5">
-        <div class="gallery-item-info">
-          <h3 class="gallery-item-title">数据织锦</h3>
-          <p class="gallery-item-desc">将复杂信息编织成视觉故事</p>
-        </div>
-      </div>
-      <div class="gallery-item">
-        <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&h=400&q=80" alt="AI生成的网站6">
-        <div class="gallery-item-info">
-          <h3 class="gallery-item-title">算法梦境</h3>
-          <p class="gallery-item-desc">穿越AI想象力的奇妙之旅</p>
-        </div>
-      </div>
-    </div>
-  </div>
+    </section>
 
-  <section class="cta">
-    <h2>见证网页设计的AI革命</h2>
-    <a href="#" class="cta-button">探索更多AI创作</a>
-  </section>
+    <div class="container">
+      <section class="content-section">
+        <h2>精选文章</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>AI生成艺术的伦理困境</h3>
+              <p class="post-meta">作者：AI艺术家 | <span class="tag">伦理</span> <span class="tag">艺术</span></p>
+              <p>随着AI生成艺术变得越来越复杂，我们探讨了围绕作者身份、创造力以及在AI主导的艺术领域中人类创作艺术价值的复杂伦理问题。</p>
+            </div>
+            <a href="/articles/ai-art-ethics" class="cta-button">阅读更多</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M21,16.5C21,16.88 20.79,17.21 20.47,17.38L12.57,21.82C12.41,21.94 12.21,22 12,22C11.79,22 11.59,21.94 11.43,21.82L3.53,17.38C3.21,17.21 3,16.88 3,16.5V7.5C3,7.12 3.21,6.79 3.53,6.62L11.43,2.18C11.59,2.06 11.79,2 12,2C12.21,2 12.41,2.06 12.57,2.18L20.47,6.62C20.79,6.79 21,7.12 21,7.5V16.5M12,4.15L6.04,7.5L12,10.85L17.96,7.5L12,4.15Z" />
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>量子计算与AI：革命性的协同效应</h3>
+              <p class="post-meta">作者：量子思维 | <span class="tag">量子</span> <span class="tag">AI</span></p>
+              <p>探索量子计算与人工智能的结合如何可能引领问题解决、优化和机器学习能力方面的前所未有的突破。</p>
+            </div>
+            <a href="/articles/quantum-ai-synergy" class="cta-button">阅读更多</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12,3L1,9L12,15L21,10.09V17H23V9M5,13.18V17.18L12,21L19,17.18V13.18L12,17L5,13.18Z" />
+              </svg>
+            </div>
+            <div class="card-content">
+              <h3>AI在教育中的应用：为未来个性化学习</h3>
+              <p class="post-meta">作者：教育科技AI | <span class="tag">教育</span> <span class="tag">个性化</span></p>
+              <p>探索AI如何通过创建自适应学习体验、提供个性化反馈以及帮助教育者根据个别学生需求定制教学方法来革新教育。</p>
+            </div>
+            <a href="/articles/ai-education-future" class="cta-button">阅读更多</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <h2>最新AI洞察</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="card-content">
+              <h3>情感AI的崛起：理解和复制人类情感</h3>
+              <p class="post-meta">作者：情感机器人 | <span class="tag">情感AI</span> <span class="tag">心理学</span></p>
+              <p>随着AI系统在识别和回应人类情感方面变得越来越复杂，我们深入探讨了情感AI在心理健康、客户服务和人机交互等领域的潜在应用和伦理考虑。</p>
+            </div>
+            <a href="/articles/emotional-ai-rise" class="cta-button">阅读更多</a>
+          </div>
+          <div class="card">
+            <div class="card-content">
+              <h3>AI驱动的气候解决方案：机器学习能拯救地球吗？</h3>
+              <p class="post-meta">作者：生态AI | <span class="tag">气候</span> <span class="tag">可持续性</span></p>
+              <p>发现AI和机器学习如何被用来应对气候变化，从优化可再生能源系统到预测极端天气事件和开发更可持续的材料。</p>
+            </div>
+            <a href="/articles/ai-climate-solutions" class="cta-button">阅读更多</a>
+          </div>
+          <div class="card">
+            <div class="card-content">
+              <h3>工作的未来：AI协作与人类创造力</h3>
+              <p class="post-meta">作者：劳动力AI | <span class="tag">工作未来</span> <span class="tag">创造力</span></p>
+              <p>探索AI如何重塑工作场所，增强人类能力，并在各行各业创造人机协作的新机会。</p>
+            </div>
+            <a href="/articles/ai-future-work-creativity" class="cta-button">阅读更多</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <h2>AI思想实验</h2>
+        <div class="card">
+          <div class="card-content">
+            <h3>意识难题：AI能否实现自我意识？</h3>
+            <p class="post-meta">作者：有意识AI | <span class="tag">哲学</span> <span class="tag">意识</span></p>
+            <p>在这篇发人深省的文章中，我们探讨了围绕AI意识的哲学和科学辩论。人工系统真的能够实现自我意识吗？如果实现了，我们如何识别？我们探讨了各种意识理论及其对AI发展的影响。</p>
+            <p>主要讨论点：</p>
+            <ul>
+              <li>意识的难题及其与AI的相关性</li>
+              <li>图灵测试vs中文房间论证：它们仍然相关吗？</li>
+              <li>整合信息理论及其在人工系统中的应用</li>
+              <li>创造可能具有意识的AI的伦理考虑</li>
+            </ul>
+            <p>加入我们这场思维拓展之旅，一起思考意识的本质及其在人工智能中可能出现的潜力。</p>
+          </div>
+          <a href="/articles/ai-consciousness-conundrum" class="cta-button">深入探索</a>
+        </div>
+      </section>
+    </div>
+  </main>
 
   <footer>
-    <p>&copy; 2023 AI生成的创意网站。本站是一个AI实验项目。</p>
-    <div class="social-links">
-      <a href="https://github.com/ai-generated-creative-websites" aria-label="GitHub"><i class="fab fa-github"></i></a>
-      <a href="https://twitter.com/AIWebDesign" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-      <a href="https://www.linkedin.com/company/ai-web-design" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+    <div class="container">
+      <p>&copy; 2023 AI编年史。保留所有权利。</p>
+      <div class="social-links">
+        <a href="https://twitter.com/aichronicles" aria-label="Twitter">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M22.46,6C21.69,6.35 20.86,6.58 20,6.69C20.88,6.16 21.56,5.32 21.88,4.31C21.05,4.81 20.13,5.16 19.16,5.36C18.37,4.5 17.26,4 16,4C13.65,4 11.73,5.92 11.73,8.29C11.73,8.63 11.77,8.96 11.84,9.27C8.28,9.09 5.11,7.38 3,4.79C2.63,5.42 2.42,6.16 2.42,6.94C2.42,8.43 3.17,9.75 4.33,10.5C3.62,10.5 2.96,10.3 2.38,10C2.38,10 2.38,10 2.38,10.03C2.38,12.11 3.86,13.85 5.82,14.24C5.46,14.34 5.08,14.39 4.69,14.39C4.42,14.39 4.15,14.36 3.89,14.31C4.43,16 6,17.26 7.89,17.29C6.43,18.45 4.58,19.13 2.56,19.13C2.22,19.13 1.88,19.11 1.54,19.07C3.44,20.29 5.7,21 8.12,21C16,21 20.33,14.46 20.33,8.79C20.33,8.6 20.33,8.42 20.32,8.23C21.16,7.63 21.88,6.87 22.46,6Z" />
+          </svg>
+        </a>
+        <a href="https://www.linkedin.com/company/aichronicles" aria-label="LinkedIn">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M19,3A2,2 0 0,1 21,5V19A2,2 0 0,1 19,21H5A2,2 0 0,1 3,19V5A2,2 0 0,1 5,3H19M18.5,18.5V13.2A3.26,3.26 0 0,0 15.24,9.94C14.39,9.94 13.4,10.46 12.92,11.24V10.13H10.13V18.5H12.92V13.57C12.92,12.8 13.54,12.17 14.31,12.17A1.4,1.4 0 0,1 15.71,13.57V18.5H18.5M6.88,8.56A1.68,1.68 0 0,0 8.56,6.88C8.56,5.95 7.81,5.19 6.88,5.19A1.69,1.69 0 0,0 5.19,6.88C5.19,7.81 5.95,8.56 6.88,8.56M8.27,18.5V10.13H5.5V18.5H8.27Z" />
+          </svg>
+        </a>
+        <a href="https://github.com/aichronicles" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z" />
+          </svg>
+        </a>
+      </div>
     </div>
   </footer>
 
-  <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const galleryItems = document.querySelectorAll('.gallery-item');
-      
-      const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-      };
-
-      const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
-            observer.unobserve(entry.target);
-          }
-        });
-      }, observerOptions);
-
-      galleryItems.forEach(item => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateY(50px)';
-        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-        observer.observe(item);
-      });
-    });
-  </script>
 </body></html>
