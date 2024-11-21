@@ -1,3 +1,4 @@
+![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=bbylw&show_icons=true&theme=radical)
 # AI 动态磁贴导航
 
 ## 项目简介
