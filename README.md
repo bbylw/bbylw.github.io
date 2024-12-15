@@ -46,11 +46,11 @@
 
 ## 📈 Contribution Activity
 
-<img src="https://github-readme-stats.vercel.app/api?username=bbylw&show_icons=true&theme=github_dark&hide_border=true&count_private=true" width="100%" />
+<img src="https://github-readme-stats.vercel.app/api?username=bbylw3&show_icons=true&theme=github_dark&hide_border=true&count_private=true" width="100%" />
 
-<img src="https://github-readme-streak-stats.herokuapp.com/?user=bbylw&theme=github-dark&hide_border=true" width="100%" />
+<img src="https://github-readme-streak-stats.herokuapp.com/?user=bbylw3&theme=github-dark&hide_border=true" width="100%" />
 
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=bbylw&layout=compact&theme=github_dark&hide_border=true" width="100%" />
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=bbylw3&layout=compact&theme=github_dark&hide_border=true" width="100%" />
 
 ## 🚀 Featured Projects
 
@@ -115,8 +115,8 @@ Decentralized supply chain management system
 <div align="center">
 <i>Let's connect and chat! Open to collaborating on interesting projects.</i>
 
-<a href="https://github.com/bbylw">![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat-square&logo=github)</a>
+<a href="https://github.com/bbylw3">![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat-square&logo=github)</a>
 <a href="https://linkedin.com/in/bbylw">![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=flat-square&logo=linkedin)</a>
-<a href="https://twitter.com/bbylw">![Twitter](https://img.shields.io/badge/-Twitter-1DA1F2?style=flat-square&logo=twitter&logoColor=white)</a>
+<a href="https://twitter.com/">![Twitter](https://img.shields.io/badge/-Twitter-1DA1F2?style=flat-square&logo=twitter&logoColor=white)</a>
 
 </div>
