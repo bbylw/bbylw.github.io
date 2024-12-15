@@ -46,7 +46,11 @@
 
 ## 📈 Contribution Activity
 
-![Contribution Graph](https://github.com/bbylw?tab=contributions&from=2023-01-01)
+<img src="https://github-readme-stats.vercel.app/api?username=bbylw&show_icons=true&theme=github_dark&hide_border=true&count_private=true" width="100%" />
+
+<img src="https://github-readme-streak-stats.herokuapp.com/?user=bbylw&theme=github-dark&hide_border=true" width="100%" />
+
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=bbylw&layout=compact&theme=github_dark&hide_border=true" width="100%" />
 
 ## 🚀 Featured Projects
 
