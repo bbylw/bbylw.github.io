@@ -1,583 +1,959 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
-
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NVIDIA BLACKWELL STYLE ARCHITECTURE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        mono: ['JetBrains Mono', 'monospace'],
-                        sans: ['Noto Sans SC', 'Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=JetBrains+Mono:wght@200;400;700;800&family=Noto+Sans+SC:wght@300;400;700;900&display=swap"
-        rel="stylesheet">
+    <title>Neural Chip X1 - AI Processor</title>
     <style>
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
             overflow: hidden;
-            background: #000;
-            font-family: 'Noto Sans SC', 'JetBrains Mono', monospace;
-            user-select: none;
-            -webkit-font-smoothing: antialiased;
-            cursor: default;
+            background: #08080c;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
         }
-
+        
         #canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1;
-            outline: none;
-        }
-
-        /* Scanlines and Noise for industrial monitor look */
-        .crt-scanlines {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.1));
-            background-size: 100% 4px;
-            z-index: 30;
-            pointer-events: none;
-        }
-
-        .noise {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-            opacity: 0.05;
-            pointer-events: none;
-            z-index: 20;
-        }
-
-        /* Branding Overlay */
-        #brand-overlay {
-            position: fixed;
-            top: 3rem;
-            left: 3rem;
-            z-index: 100;
-            pointer-events: none;
-            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8);
-        }
-
-        .gold-text {
-            color: #d4af37;
-        }
-
-        /* Initial State Styling for UI Panel */
-        #ui-panel {
-            position: fixed;
-            top: 3rem;
-            right: 3rem;
-            z-index: 100;
-            width: 420px;
-            background: rgba(5, 5, 8, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 2rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
-            transform: translateX(0);
-            opacity: 1;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: auto;
-            /* Allow clicks even in default state */
-        }
-
-        /* Glitch effect on hover */
-        .glitch-bar {
-            height: 2px;
-            width: 0%;
-            background: var(--theme-color, #fff);
-            box-shadow: 0 0 10px var(--theme-color, #fff);
-            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        #ui-panel.active .glitch-bar {
             width: 100%;
+            height: 100%;
         }
-
-        /* Crosshair in center */
-        .center-crosshair {
+        
+        /* Header */
+        .header {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            transform: translate(-50%, -50%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(8,8,12,0.95) 0%, rgba(8,8,12,0) 100%);
         }
-
-        .center-crosshair::before,
-        .center-crosshair::after {
-            content: '';
-            position: absolute;
-            background: rgba(255, 255, 255, 0.2);
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
-
-        .center-crosshair::before {
+        
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #e8c47c 0%, #c9a045 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(200,160,70,0.3);
+        }
+        
+        .brand-mark svg {
+            width: 20px;
+            height: 20px;
+            fill: #1a1a1a;
+        }
+        
+        .brand-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+        }
+        
+        .brand-model {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+        
+        .metrics {
+            display: flex;
+            gap: 28px;
+        }
+        
+        .metric {
+            text-align: right;
+        }
+        
+        .metric-label {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #ffffff;
+        }
+        
+        .metric-value.accent {
+            color: #e8c47c;
+        }
+        
+        .metric-unit {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            margin-left: 2px;
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            left: 32px;
             top: 50%;
-            left: -10px;
-            right: -10px;
-            height: 1px;
             transform: translateY(-50%);
+            z-index: 100;
+            width: 260px;
         }
-
-        .center-crosshair::after {
-            left: 50%;
-            top: -10px;
-            bottom: -10px;
-            width: 1px;
-            transform: translateX(-50%);
+        
+        .info-header {
+            margin-bottom: 24px;
+        }
+        
+        .info-title {
+            font-size: 1.6rem;
+            font-weight: 300;
+            color: #ffffff;
+            line-height: 1.3;
+            margin-bottom: 8px;
+        }
+        
+        .info-subtitle {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+            line-height: 1.5;
+        }
+        
+        .spec-group {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .spec-title {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+        
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+        
+        .spec-name {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.6);
+        }
+        
+        .spec-val {
+            font-size: 0.8rem;
+            color: #ffffff;
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            margin-top: 4px;
+            height: 3px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e8c47c, #f0d890);
+            border-radius: 2px;
+        }
+        
+        /* Footer Controls */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 100;
+            background: linear-gradient(0deg, rgba(8,8,12,0.95) 0%, rgba(8,8,12,0) 100%);
+        }
+        
+        .nav-link {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.78rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            letter-spacing: 0.3px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-link:hover {
+            background: rgba(232,196,124,0.15);
+            border-color: rgba(232,196,124,0.35);
+            color: #e8c47c;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .nav-link .nav-icon {
+            margin-right: 6px;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            right: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            width: 180px;
+        }
+        
+        .control-group {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .control-group-title {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            padding-left: 4px;
+        }
+        
+        .control-btn {
+            width: 100%;
+            padding: 10px 12px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.75rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: left;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-btn:last-child {
+            margin-bottom: 0;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .control-btn.active {
+            background: rgba(232,196,124,0.1);
+            border-color: rgba(232,196,124,0.3);
+            color: #e8c47c;
+        }
+        
+        .control-btn .icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Loading */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: #08080c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.6s ease;
+        }
+        
+        .loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-ring {
+            width: 44px;
+            height: 44px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top-color: #e8c47c;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .control-panel { display: none; }
+        }
+        
+        @media (max-width: 900px) {
+            .info-panel { display: none; }
+            .metrics { gap: 20px; }
+        }
+        
+        @media (max-width: 600px) {
+            .metrics { display: none; }
+            .header, .controls { padding: 16px 20px; }
+            .controls { flex-wrap: wrap; }
+            .nav-link { padding: 8px 14px; font-size: 0.72rem; }
         }
     </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="loading-ring"></div>
+    </div>
+    
+    <div id="canvas-container"></div>
+    
+    <div class="header">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+            </div>
+            <div>
+                <div class="brand-name">Neural Chip</div>
+                <div class="brand-model">X1 Series</div>
+            </div>
+        </div>
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Compute</div>
+                <div class="metric-value accent" id="compute">256<span class="metric-unit">TOPS</span></div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Memory</div>
+                <div class="metric-value" id="memory">64<span class="metric-unit">GB</span></div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Power</div>
+                <div class="metric-value" id="power">45<span class="metric-unit">W</span></div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Temp</div>
+                <div class="metric-value" id="temp">38<span class="metric-unit">°C</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <div class="info-header">
+            <div class="info-title">AI Neural<br>Processing Unit</div>
+            <div class="info-subtitle">7nm process technology with 256 integrated AI cores for deep learning acceleration.</div>
+        </div>
+        <div class="spec-group">
+            <div class="spec-title">Specifications</div>
+            <div class="spec-row">
+                <span class="spec-name">Process</span>
+                <span class="spec-val">7nm FinFET</span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-name">Transistors</span>
+                <span class="spec-val">28.4B</span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-name">Die Size</span>
+                <span class="spec-val">420mm²</span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-name">TDP</span>
+                <span class="spec-val">45W</span>
+            </div>
+        </div>
+        <div class="spec-group">
+            <div class="spec-title">Utilization</div>
+            <div class="spec-row">
+                <span class="spec-name">Neural Cores</span>
+                <span class="spec-val">98%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 98%"></div></div>
+            <div class="spec-row">
+                <span class="spec-name">Memory</span>
+                <span class="spec-val">76%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 76%"></div></div>
+            <div class="spec-row">
+                <span class="spec-name">Bandwidth</span>
+                <span class="spec-val">89%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 89%"></div></div>
+        </div>
+    </div>
+    
+    <div class="control-panel">
+        <div class="control-group">
+            <div class="control-group-title">View Controls</div>
+            <button class="control-btn active" id="btn-rotate">
+                <span class="icon">↻</span>Auto Rotate
+            </button>
+            <button class="control-btn" id="btn-explode">
+                <span class="icon">⬚</span>Explode View
+            </button>
+            <button class="control-btn active" id="btn-data">
+                <span class="icon">◈</span>Data Flow
+            </button>
+            <button class="control-btn" id="btn-wireframe">
+                <span class="icon">◇</span>Wireframe
+            </button>
+            <button class="control-btn" id="btn-reset">
+                <span class="icon">⟲</span>Reset
+            </button>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <a href="https://pornavp.onrender.com/" target="_blank" rel="noopener noreferrer" class="nav-link">
+            <span class="nav-icon">🧭</span>AI Navigator
+        </a>
+        <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="nav-link">
+            <span class="nav-icon">💬</span>ChatGPT
+        </a>
+        <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="nav-link">
+            <span class="nav-icon">✨</span>Gemini
+        </a>
+        <a href="https://www.google.com/" target="_blank" rel="noopener noreferrer" class="nav-link">
+            <span class="nav-icon">🔍</span>Google
+        </a>
+        <a href="https://grok.com/" target="_blank" rel="noopener noreferrer" class="nav-link">
+            <span class="nav-icon">🚀</span>Grok
+        </a>
+    </div>
 
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
         }
     }
     </script>
-</head>
-
-<body>
-    <div class="noise"></div>
-    <div class="crt-scanlines"></div>
-    <div class="center-crosshair"></div>
-
-    <!-- Branding -->
-    <div id="brand-overlay" class="pointer-events-none">
-        <h1 class="text-3xl md:text-3xl font-black tracking-tight text-white mb-2 font-sans">
-            深空<span class="gold-text">架构</span> // 神经元导航矩阵
-        </h1>
-        <div class="flex items-center gap-3 text-xs tracking-[0.1em] text-white/50 font-mono">
-            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]"></span>
-            全域算力引擎在线 / 请选择需要接入的张量网络
-        </div>
-    </div>
-
-    <!-- Main Navigation List (Left Sidebar) -->
-    <div id="nav-list" class="fixed left-12 top-40 z-50 flex flex-col gap-3 w-80 pointer-events-auto">
-        <!-- Dynamically rendered by JS -->
-    </div>
-
-    <!-- Hover Diagnostics Panel -->
-    <div id="ui-panel">
-        <div class="flex items-center gap-3 mb-4">
-            <div id="node-led" class="w-3 h-3 rounded-sm shadow-lg animate-pulse bg-white"></div>
-            <div id="node-id" class="text-xs font-bold tracking-[0.2em] text-white/50">SYS_IDLE</div>
-        </div>
-
-        <h2 id="node-title" class="text-3xl font-black font-sans tracking-tight text-white mb-3 uppercase">全域系统就绪</h2>
-
-        <p id="node-desc" class="text-sm font-sans font-light text-white/70 leading-relaxed mb-8">
-            通过鼠标悬停于中心 3D 芯片的各个物理模块结构（如中央处理核心、边缘显存堆叠栈），来唤起并接通对应的神经网络空间。
-        </p>
-
-        <div class="w-full bg-white/5 h-[2px] mb-2 overflow-hidden">
-            <div id="node-bar" class="glitch-bar"></div>
-        </div>
-
-        <div class="flex justify-between text-[10px] text-white/40 tracking-widest mb-6">
-            <span id="node-alloc">架构系统状态</span>
-            <span id="node-peak" class="font-mono">AWAITING INPUT...</span>
-        </div>
-
-        <button id="connect-btn"
-            class="w-full py-4 bg-white/5 border border-white/20 hover:bg-white hover:text-black transition-all duration-300 text-sm font-bold tracking-[0.1em] text-center font-sans opacity-50 cursor-not-allowed shadow-lg text-white">
-            未探测到目标链路
-        </button>
-    </div>
-
-    <!-- 3D Canvas Container -->
-    <div id="canvas-container"></div>
 
     <script type="module">
-        // Using standard rock-solid WebGL Render pipeline for maximum compatibility and visual fidelity
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-        // --- Data Definitions ---
-        const nodesData = {
-            'hub': { id: "00 主控核心 [NV-ROUTING]", title: "WebNav Hub", desc: "主板视频算力中枢。强制分配芯片内高速流处理器，负责极高并发带宽媒体的转码与流出汇聚。", url: "https://pornavp.onrender.com", color: "#00f0ff" },
-            'chatgpt': { id: "01 张量单元 [COMPUTE_L]", title: "ChatGPT Core", desc: "语言模型的思维运算芯片分片。唤醒高维张量单元，实时的推演与庞大上下文咀嚼将在此物理区域爆发。", url: "https://chatgpt.com/", color: "#00ffaa" },
-            'gemini': { id: "02 张量单元 [COMPUTE_R]", title: "Gemini Sub-System", desc: "多模态共算物理分片核心。能够游刃有余地接纳系统面对视、听、文数据同时涌入时造成的芯片过载与张量电涌。", url: "https://gemini.google.com/", color: "#cc00ff" },
-            'google': { id: "03 高速显存 [HBM3E_TOP]", title: "Google Matrix", desc: "连接全球核心数据库的存储桥。外围金属插脚将以极高频率读取外界信息流，构造庞大的全知搜索网络堆栈。", url: "https://www.google.com/", color: "#ff3366" },
-            'grok': { id: "04 高速显存 [HBM3E_BOT]", title: "Grok Unsanctioned", desc: "供无修正数据写入的末端显存区。彻底隔离安全对齐机制，接受来自全网一切混沌暴躁信号的强制输入。", url: "https://grok.com/", color: "#ffee00" }
+        let scene, camera, renderer, controls, clock;
+        let chipGroup, layers = {};
+        let dataParticles;
+        
+        const state = {
+            autoRotate: true,
+            exploded: false,
+            showData: true,
+            wireframe: false
         };
 
-        let camera, scene, renderer, controls;
-        let raycaster, mouse;
-        const interactiveMeshes = [];
-        let hoveredData = null;
-
-        // UI Elements
-        const uiPanel = document.getElementById('ui-panel');
-        const nodeId = document.getElementById('node-id');
-        const nodeTitle = document.getElementById('node-title');
-        const nodeDesc = document.getElementById('node-desc');
-        const nodeLed = document.getElementById('node-led');
-        const connectBtn = document.getElementById('connect-btn');
-        const navList = document.getElementById('nav-list');
-
-        init();
-        animate();
+        // 配色方案
+        const colors = {
+            substrate: 0x1c1c1e,
+            ihs: 0x2d2d30,
+            ihsAccent: 0x3d3d42,
+            die: 0xc9a045,
+            dieDark: 0x8a6d2b,
+            pcbGreen: 0x0d2818,
+            pcbTrace: 0x2d5a3a,
+            copper: 0xb87333,
+            gold: 0xd4af37,
+            silver: 0xa8a8a8,
+            accent: 0xe8c47c
+        };
 
         function init() {
-            const container = document.getElementById('canvas-container');
-
-            // --- 0. Build Navigation Sidebar ---
-            Object.values(nodesData).forEach(data => {
-                const btn = document.createElement('a');
-                btn.href = data.url;
-                btn.target = "_blank";
-                btn.setAttribute("data-node-id", data.id);
-                // Glassmorphism Button Layout
-                btn.className = "group relative overflow-hidden bg-[#0A0A0C]/80 border border-white/5 hover:border-white/20 hover:bg-[#151518]/90 backdrop-blur-md px-5 py-4 flex flex-col transition-all duration-300 transform hover:translate-x-2";
-
-                btn.innerHTML = `
-                    <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-white opacity-20 transition-all duration-300 group-hover:opacity-100" style="background-color: ${data.color}"></div>
-                    <div class="text-[0.65rem] tracking-[0.2em] font-mono text-white/40 mb-1 transition-colors duration-300" style="--tw-text-opacity:1; group-hover:color:${data.color}">${data.id}</div>
-                    <div class="text-base font-bold font-sans text-white/90 group-hover:text-white transition-colors duration-300">${data.title}</div>
-                `;
-
-                btn.addEventListener('mouseenter', () => hoveredData = data);
-                btn.addEventListener('mouseleave', () => {
-                    if (hoveredData === data) {
-                        // Check if 3D Raycaster is still actually hovering it before nullifying to prevent flicker
-                        hoveredData = null;
-                    }
-                });
-
-                navList.appendChild(btn);
-            });
-
-            // 1. Core Scene
+            clock = new THREE.Clock();
+            
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x030303);
-            scene.fog = new THREE.FogExp2(0x030303, 0.003);
-
-            // 2. Camera matches the dramatic top-down isometric hardware photography angle
-            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 1000);
-            camera.position.set(-80, 110, 120);
-
-            // 3. Renderer with absolute High-End quality
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setPixelRatio(window.devicePixelRatio);
+            scene.background = new THREE.Color(0x08080c);
+            
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 500);
+            camera.position.set(25, 20, 25);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.2;
-            container.appendChild(renderer.domElement);
-
-            // 4. Environment Map for Photorealistic Metals
-            const pmremGenerator = new THREE.PMREMGenerator(renderer);
-            scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-
-            // 5. Controls
+            renderer.toneMappingExposure = 1.0;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2.2;
-            controls.minDistance = 50;
-            controls.maxDistance = 250;
-            controls.target.set(0, 0, 0);
-
-            // 6. Lighting
-            const ambient = new THREE.AmbientLight(0x222222);
-            scene.add(ambient);
-
-            const spotLight = new THREE.SpotLight(0xfff0ee, 20000);
-            spotLight.position.set(-50, 150, 50);
-            spotLight.angle = Math.PI / 4;
-            spotLight.penumbra = 0.5;
-            scene.add(spotLight);
-
-            const rimLight = new THREE.DirectionalLight(0xaaccff, 2);
-            rimLight.position.set(50, 20, -100);
-            scene.add(rimLight);
-
-            // 7. Raycaster setup
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-
-            // Assemble the Hardware
-            buildHardwareGeometry();
-
-            // Events
-            window.addEventListener('resize', onWindowResize);
-            container.addEventListener('mousemove', onMouseMove);
-            connectBtn.addEventListener('click', onConnectClick);
-
-            // Allow clicking directly on the 3D chips to navigate
-            let downX = 0, downY = 0;
-            container.addEventListener('pointerdown', (e) => {
-                downX = e.clientX;
-                downY = e.clientY;
-            });
-            container.addEventListener('pointerup', (e) => {
-                // If moved less than 5 pixels, consider it a deliberate click and not a camera drag
-                if (Math.abs(e.clientX - downX) < 5 && Math.abs(e.clientY - downY) < 5) {
-                    onConnectClick();
-                }
-            });
+            controls.dampingFactor = 0.08;
+            controls.minDistance = 15;
+            controls.maxDistance = 60;
+            controls.maxPolarAngle = Math.PI * 0.85;
+            controls.target.set(0, 2, 0);
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.5;
+            
+            createLighting();
+            createChip();
+            createDataFlow();
+            createEnvironment();
+            
+            window.addEventListener('resize', onResize);
+            
+            setupControlButtons();
+            
+            setTimeout(() => document.getElementById('loading').classList.add('hidden'), 500);
+            
+            animate();
         }
-
-        // --- PROCEDURAL CANVAS TEXTURE GENERATOR FOR SILICON DIES ---
-        function createComputeTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 1024;
-            canvas.height = 2048;
-            const ctx = canvas.getContext('2d');
-
-            // Base dark silicon blue
-            ctx.fillStyle = '#060a10';
-            ctx.fillRect(0, 0, 1024, 2048);
-
-            // Dark grid routing channels
-            ctx.strokeStyle = '#0d1624';
-            ctx.lineWidth = 4;
-            for (let i = 0; i < 1024; i += 32) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 2048); ctx.stroke();
-            }
-            for (let j = 0; j < 2048; j += 32) {
-                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(1024, j); ctx.stroke();
-            }
-
-            // Draw thousands of SM (Streaming Multiprocessor) cores
-            for (let x = 32; x < 1024 - 32; x += 64) {
-                for (let y = 32; y < 2048 - 32; y += 64) {
-                    if (Math.random() > 0.15) {
-                        // Core Base
-                        const lum = Math.floor(15 + Math.random() * 20);
-                        ctx.fillStyle = `rgb(10, ${lum}, ${lum + 15})`;
-                        ctx.fillRect(x + 6, y + 6, 52, 52);
-
-                        // Micro-circuit logic units inside core
-                        ctx.fillStyle = `rgb(15, ${lum + 20}, ${lum + 30})`;
-                        ctx.fillRect(x + 14, y + 14, 14, 14);
-                        ctx.fillRect(x + 36, y + 14, 14, 14);
-                        ctx.fillRect(x + 14, y + 36, 14, 14);
-                        ctx.fillRect(x + 36, y + 36, 14, 14);
+        
+        function setupControlButtons() {
+            document.getElementById('btn-rotate').addEventListener('click', function() {
+                state.autoRotate = !state.autoRotate;
+                controls.autoRotate = state.autoRotate;
+                this.classList.toggle('active', state.autoRotate);
+            });
+            
+            document.getElementById('btn-explode').addEventListener('click', function() {
+                state.exploded = !state.exploded;
+                this.classList.toggle('active', state.exploded);
+            });
+            
+            document.getElementById('btn-data').addEventListener('click', function() {
+                state.showData = !state.showData;
+                dataParticles.visible = state.showData;
+                this.classList.toggle('active', state.showData);
+            });
+            
+            document.getElementById('btn-wireframe').addEventListener('click', function() {
+                state.wireframe = !state.wireframe;
+                this.classList.toggle('active', state.wireframe);
+                
+                chipGroup.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        child.material.wireframe = state.wireframe;
                     }
+                });
+            });
+            
+            document.getElementById('btn-reset').addEventListener('click', function() {
+                state.autoRotate = true;
+                state.exploded = false;
+                state.showData = true;
+                state.wireframe = false;
+                
+                controls.autoRotate = true;
+                dataParticles.visible = true;
+                chipGroup.rotation.y = 0;
+                
+                chipGroup.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        child.material.wireframe = false;
+                    }
+                });
+                
+                Object.keys(layers).forEach(key => {
+                    if (layers[key]) layers[key].position.y = 0;
+                });
+                
+                camera.position.set(25, 20, 25);
+                controls.target.set(0, 2, 0);
+                
+                document.getElementById('btn-rotate').classList.add('active');
+                document.getElementById('btn-explode').classList.remove('active');
+                document.getElementById('btn-data').classList.add('active');
+                document.getElementById('btn-wireframe').classList.remove('active');
+            });
+        }
+
+        function createLighting() {
+            const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+            scene.add(ambient);
+            
+            const main = new THREE.DirectionalLight(0xffffff, 1.0);
+            main.position.set(15, 25, 15);
+            main.castShadow = true;
+            main.shadow.mapSize.width = 2048;
+            main.shadow.mapSize.height = 2048;
+            main.shadow.camera.near = 1;
+            main.shadow.camera.far = 80;
+            main.shadow.camera.left = -25;
+            main.shadow.camera.right = 25;
+            main.shadow.camera.top = 25;
+            main.shadow.camera.bottom = -25;
+            main.shadow.bias = -0.0001;
+            scene.add(main);
+            
+            const fill = new THREE.DirectionalLight(0x8899aa, 0.4);
+            fill.position.set(-15, 8, -10);
+            scene.add(fill);
+            
+            const rim = new THREE.DirectionalLight(0xffddaa, 0.3);
+            rim.position.set(0, -5, -20);
+            scene.add(rim);
+            
+            const core = new THREE.PointLight(0xe8c47c, 0.6, 20);
+            core.position.set(0, 8, 0);
+            scene.add(core);
+        }
+
+        function createChip() {
+            chipGroup = new THREE.Group();
+            
+            createPCB();
+            createPackage();
+            createIHS();
+            createHeatsink();
+            createPins();
+            
+            scene.add(chipGroup);
+        }
+
+        function createPCB() {
+            const pcbGroup = new THREE.Group();
+            
+            const pcbGeo = new THREE.BoxGeometry(22, 0.6, 22);
+            const pcbMat = new THREE.MeshStandardMaterial({
+                color: colors.pcbGreen,
+                metalness: 0.1,
+                roughness: 0.8
+            });
+            const pcb = new THREE.Mesh(pcbGeo, pcbMat);
+            pcb.position.y = -0.3;
+            pcb.receiveShadow = true;
+            pcbGroup.add(pcb);
+            
+            const traceMat = new THREE.MeshStandardMaterial({
+                color: colors.pcbTrace,
+                metalness: 0.4,
+                roughness: 0.5
+            });
+            
+            for (let i = 0; i < 40; i++) {
+                const traceGeo = new THREE.BoxGeometry(Math.random() * 4 + 1, 0.02, 0.08);
+                const trace = new THREE.Mesh(traceGeo, traceMat);
+                trace.position.set((Math.random() - 0.5) * 20, 0.02, (Math.random() - 0.5) * 20);
+                trace.rotation.y = Math.random() * Math.PI;
+                pcbGroup.add(trace);
+            }
+            
+            for (let i = 0; i < 24; i++) {
+                const capGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.4, 8);
+                const capMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.7, roughness: 0.3 });
+                const cap = new THREE.Mesh(capGeo, capMat);
+                const angle = (i / 24) * Math.PI * 2;
+                const radius = 9 + Math.random() * 1.5;
+                cap.position.set(Math.cos(angle) * radius, 0.2, Math.sin(angle) * radius);
+                cap.castShadow = true;
+                pcbGroup.add(cap);
+            }
+            
+            layers.pcb = pcbGroup;
+            chipGroup.add(pcbGroup);
+        }
+
+        function createPackage() {
+            const pkgGroup = new THREE.Group();
+            
+            const baseGeo = new THREE.BoxGeometry(10, 0.8, 10);
+            const baseMat = new THREE.MeshStandardMaterial({ color: colors.substrate, metalness: 0.2, roughness: 0.6 });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            base.position.y = 0.4;
+            base.castShadow = true;
+            base.receiveShadow = true;
+            pkgGroup.add(base);
+            
+            const dieGeo = new THREE.BoxGeometry(5, 0.25, 5);
+            const dieMat = new THREE.MeshStandardMaterial({
+                color: colors.die,
+                metalness: 0.85,
+                roughness: 0.15,
+                emissive: colors.dieDark,
+                emissiveIntensity: 0.1
+            });
+            const die = new THREE.Mesh(dieGeo, dieMat);
+            die.position.y = 0.925;
+            die.castShadow = true;
+            pkgGroup.add(die);
+            
+            createDiePattern(pkgGroup, 5, 1.05);
+            
+            layers.package = pkgGroup;
+            chipGroup.add(pkgGroup);
+        }
+
+        function createDiePattern(parent, size, y) {
+            const traceMat = new THREE.MeshStandardMaterial({ color: colors.dieDark, metalness: 0.9, roughness: 0.2 });
+            const gridSize = 12;
+            const cellSize = size / gridSize;
+            
+            for (let i = 0; i <= gridSize; i++) {
+                const hLine = new THREE.Mesh(new THREE.BoxGeometry(size, 0.02, 0.03), traceMat);
+                hLine.position.set(0, y, -size/2 + i * cellSize);
+                parent.add(hLine);
+                
+                const vLine = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, size), traceMat);
+                vLine.position.set(-size/2 + i * cellSize, y, 0);
+                parent.add(vLine);
+            }
+            
+            const blocks = [
+                { x: -1, z: -1, w: 1.5, h: 1.5 },
+                { x: 1, z: -1, w: 1.2, h: 1.8 },
+                { x: -1, z: 1, w: 1.8, h: 1.2 },
+                { x: 1, z: 1, w: 1.5, h: 1.5 },
+                { x: 0, z: 0, w: 1, h: 1 }
+            ];
+            
+            blocks.forEach(b => {
+                const blockMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.95, roughness: 0.1 });
+                const block = new THREE.Mesh(new THREE.BoxGeometry(b.w, 0.04, b.h), blockMat);
+                block.position.set(b.x, y + 0.01, b.z);
+                parent.add(block);
+            });
+        }
+
+        function createIHS() {
+            const ihsGroup = new THREE.Group();
+            
+            const ihsGeo = new THREE.BoxGeometry(9, 0.6, 9);
+            const ihsMat = new THREE.MeshStandardMaterial({ color: colors.ihs, metalness: 0.85, roughness: 0.25 });
+            const ihs = new THREE.Mesh(ihsGeo, ihsMat);
+            ihs.position.y = 1.3;
+            ihs.castShadow = true;
+            ihsGroup.add(ihs);
+            
+            const edgeMat = new THREE.MeshStandardMaterial({ color: colors.ihsAccent, metalness: 0.9, roughness: 0.2 });
+            const edgeGeo = new THREE.BoxGeometry(9.2, 0.15, 9.2);
+            const edge = new THREE.Mesh(edgeGeo, edgeMat);
+            edge.position.y = 1.675;
+            ihsGroup.add(edge);
+            
+            const labelMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3f, metalness: 0.7, roughness: 0.4 });
+            const labelGeo = new THREE.BoxGeometry(4, 0.02, 2);
+            const label = new THREE.Mesh(labelGeo, labelMat);
+            label.position.set(0, 1.61, -1.5);
+            ihsGroup.add(label);
+            
+            const label2 = new THREE.Mesh(labelGeo, labelMat);
+            label2.position.set(0, 1.61, 1.5);
+            ihsGroup.add(label2);
+            
+            for (let i = 0; i < 3; i++) {
+                const dot = new THREE.Mesh(new THREE.CircleGeometry(0.1, 16), labelMat);
+                dot.rotation.x = -Math.PI / 2;
+                dot.position.set(-3 + i * 0.3, 1.62, 3);
+                ihsGroup.add(dot);
+            }
+            
+            layers.ihs = ihsGroup;
+            chipGroup.add(ihsGroup);
+        }
+
+        function createHeatsink() {
+            const heatsinkGroup = new THREE.Group();
+            
+            const baseMat = new THREE.MeshStandardMaterial({ color: colors.silver, metalness: 0.95, roughness: 0.15 });
+            const basePlate = new THREE.Mesh(new THREE.BoxGeometry(11, 0.4, 11), baseMat);
+            basePlate.position.y = 1.9;
+            basePlate.castShadow = true;
+            heatsinkGroup.add(basePlate);
+            
+            const finMat = new THREE.MeshStandardMaterial({ color: colors.silver, metalness: 0.9, roughness: 0.2 });
+            const finCount = 18;
+            const finSpacing = 10 / finCount;
+            
+            for (let i = 0; i < finCount; i++) {
+                const fin = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4, 10), finMat);
+                fin.position.set(-5 + finSpacing / 2 + i * finSpacing, 4.1, 0);
+                fin.castShadow = true;
+                heatsinkGroup.add(fin);
+            }
+            
+            const pipeMat = new THREE.MeshStandardMaterial({ color: colors.copper, metalness: 0.9, roughness: 0.25 });
+            for (let i = 0; i < 4; i++) {
+                const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 4.5, 12), pipeMat);
+                pipe.position.set(0, 4.15, -3 + i * 2);
+                pipe.castShadow = true;
+                heatsinkGroup.add(pipe);
+            }
+            
+            const topBar = new THREE.Mesh(new THREE.BoxGeometry(10.5, 0.3, 1.5), baseMat);
+            topBar.position.set(0, 6.25, 0);
+            topBar.castShadow = true;
+            heatsinkGroup.add(topBar);
+            
+            layers.heatsink = heatsinkGroup;
+            chipGroup.add(heatsinkGroup);
+        }
+
+        function createPins() {
+            const pinGroup = new THREE.Group();
+            const pinMat = new THREE.MeshStandardMaterial({ color: colors.gold, metalness: 0.95, roughness: 0.12 });
+            const pinsPerSide = 28;
+            const spacing = 9.5 / pinsPerSide;
+            
+            for (let side = 0; side < 4; side++) {
+                for (let i = 0; i < pinsPerSide; i++) {
+                    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 6), pinMat);
+                    let x, z;
+                    const offset = -4.75 + spacing / 2 + i * spacing;
+                    switch(side) {
+                        case 0: x = offset; z = -5.2; break;
+                        case 1: x = 5.2; z = offset; break;
+                        case 2: x = offset; z = 5.2; break;
+                        case 3: x = -5.2; z = offset; break;
+                    }
+                    pin.position.set(x, -0.5, z);
+                    pin.castShadow = true;
+                    pinGroup.add(pin);
                 }
             }
-
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-            return tex;
+            
+            layers.pins = pinGroup;
+            chipGroup.add(pinGroup);
         }
 
-        function buildHardwareGeometry() {
-            // Reference Image Matched Materials
-            const goldMat = new THREE.MeshStandardMaterial({ color: 0xe6b85c, metalness: 1.0, roughness: 0.25 });
-            const substrateMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.3, roughness: 0.8 });
-            const interposerMat = new THREE.MeshStandardMaterial({ color: 0x222324, metalness: 0.6, roughness: 0.5 });
-
-            // Photoreal Silicon for dies (uses clearcoat & iridescence)
-            const computeMat = new THREE.MeshPhysicalMaterial({
-                map: createComputeTexture(),
-                color: 0xaaaaaa, metalness: 0.7, roughness: 0.3,
-                clearcoat: 1.0, clearcoatRoughness: 0.1,
-                iridescence: 1.0, iridescenceIOR: 1.3
+        function createDataFlow() {
+            const particleCount = 400;
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            
+            for (let i = 0; i < particleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 2 + 0.5;
+                positions[i * 3] = Math.cos(angle) * radius;
+                positions[i * 3 + 1] = Math.random() * 6 + 2;
+                positions[i * 3 + 2] = Math.sin(angle) * radius;
+                velocities.push({ y: Math.random() * 0.015 + 0.008, angle, radius, speed: Math.random() * 0.015 + 0.01 });
+            }
+            
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.userData.velocities = velocities;
+            
+            const mat = new THREE.PointsMaterial({
+                size: 0.12,
+                color: colors.accent,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
             });
-
-            // Golden bronze memory
-            const hbmMat = new THREE.MeshStandardMaterial({ color: 0xc49b4f, metalness: 0.9, roughness: 0.35 });
-
-            const chipGrp = new THREE.Group();
-            scene.add(chipGrp);
-
-            // 1. Massive Outer Gold Frame (100x100 bounds)
-            const frameThickness = 4;
-            const size = 100;
-
-            const f1 = new THREE.Mesh(new THREE.BoxGeometry(size, 2, frameThickness), goldMat);
-            f1.position.set(0, 1, (size - frameThickness) / 2);
-            chipGrp.add(f1);
-
-            const f2 = new THREE.Mesh(new THREE.BoxGeometry(size, 2, frameThickness), goldMat);
-            f2.position.set(0, 1, -(size - frameThickness) / 2);
-            chipGrp.add(f2);
-
-            const f3 = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, 2, size - frameThickness * 2), goldMat);
-            f3.position.set((size - frameThickness) / 2, 1, 0);
-            chipGrp.add(f3);
-
-            const f4 = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, 2, size - frameThickness * 2), goldMat);
-            f4.position.set(-(size - frameThickness) / 2, 1, 0);
-            chipGrp.add(f4);
-
-            // 2. Black Substrate Layer
-            const subMesh = new THREE.Mesh(new THREE.BoxGeometry(size - frameThickness * 2, 1.0, size - frameThickness * 2), substrateMat);
-            subMesh.position.y = 0.5;
-            chipGrp.add(subMesh);
-
-            // 3. Central Interposer
-            const interposer = new THREE.Mesh(new THREE.BoxGeometry(80, 0.4, 70), interposerMat);
-            interposer.position.y = 1.2;
-            chipGrp.add(interposer);
-
-            // --- INTERACTIVE CORE NODES ---
-
-            // 4. Compute Dies (Center Left & Right)
-            const lDie = new THREE.Mesh(new THREE.BoxGeometry(26, 0.5, 40), computeMat.clone());
-            lDie.position.set(-14, 1.45, 0);
-            lDie.userData = nodesData['chatgpt'];
-            chipGrp.add(lDie);
-            interactiveMeshes.push(lDie);
-
-            const rDie = new THREE.Mesh(new THREE.BoxGeometry(26, 0.5, 40), computeMat.clone());
-            rDie.position.set(14, 1.45, 0);
-            rDie.userData = nodesData['gemini'];
-            chipGrp.add(rDie);
-            interactiveMeshes.push(rDie);
-
-            // 5. NVLink Router Bridge (Center Top Bar)
-            const bridgeGeo = new THREE.BoxGeometry(8, 0.6, 44);
-            const bridgeMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 });
-            const bridge = new THREE.Mesh(bridgeGeo, bridgeMat);
-            bridge.position.set(0, 1.6, 0);
-            bridge.userData = nodesData['hub'];
-            chipGrp.add(bridge);
-            interactiveMeshes.push(bridge);
-
-            // 6. HBM3E Stacks (Top & Bottom Flanks)
-            // Top HBMs (Google)
-            for (let i = 0; i < 4; i++) {
-                const hbm = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 10), hbmMat.clone());
-                hbm.position.set(-23 + i * 15.3, 1.4, -28);
-                // Assign identical object reference so they light up as a group
-                hbm.userData = nodesData['google'];
-                chipGrp.add(hbm);
-                interactiveMeshes.push(hbm);
-            }
-
-            // Bottom HBMs (Grok)
-            for (let i = 0; i < 4; i++) {
-                const hbm = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 10), hbmMat.clone());
-                hbm.position.set(-23 + i * 15.3, 1.4, 28);
-                hbm.userData = nodesData['grok'];
-                chipGrp.add(hbm);
-                interactiveMeshes.push(hbm);
-            }
+            
+            dataParticles = new THREE.Points(geo, mat);
+            scene.add(dataParticles);
         }
 
-        // --- INTERACTION LOGIC ---
-        function onMouseMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        function createEnvironment() {
+            const groundGeo = new THREE.PlaneGeometry(100, 100);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0c, metalness: 0.3, roughness: 0.9 });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -1.5;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            const reflectGeo = new THREE.PlaneGeometry(30, 30);
+            const reflectMat = new THREE.MeshStandardMaterial({ color: 0x080808, metalness: 0.95, roughness: 0.1, transparent: true, opacity: 0.4 });
+            const reflect = new THREE.Mesh(reflectGeo, reflectMat);
+            reflect.rotation.x = -Math.PI / 2;
+            reflect.position.y = -1.48;
+            scene.add(reflect);
         }
 
-        function onConnectClick() {
-            if (hoveredData && hoveredData.url) {
-                window.open(hoveredData.url, '_blank');
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+            
+            // 爆炸视图动画
+            if (chipGroup) {
+                const targets = {
+                    heatsink: state.exploded ? 6 : 0,
+                    ihs: state.exploded ? 3 : 0,
+                    package: state.exploded ? 1 : 0,
+                    pcb: state.exploded ? -1 : 0,
+                    pins: state.exploded ? -1.5 : 0
+                };
+                
+                Object.keys(layers).forEach(key => {
+                    if (layers[key] && targets[key] !== undefined) {
+                        layers[key].position.y += (targets[key] - layers[key].position.y) * 0.04;
+                    }
+                });
             }
+            
+            // 数据流
+            if (dataParticles && state.showData) {
+                const pos = dataParticles.geometry.attributes.position.array;
+                const vel = dataParticles.geometry.userData.velocities;
+                for (let i = 0; i < vel.length; i++) {
+                    vel[i].angle += vel[i].speed;
+                    pos[i * 3] = Math.cos(vel[i].angle) * vel[i].radius;
+                    pos[i * 3 + 1] += vel[i].y;
+                    if (pos[i * 3 + 1] > 10) pos[i * 3 + 1] = 2;
+                }
+                dataParticles.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            // 温度更新
+            const temp = 38 + Math.sin(time * 0.5) * 2 + Math.random() * 0.5;
+            document.getElementById('temp').innerHTML = temp.toFixed(0) + '<span class="metric-unit">°C</span>';
+            
+            controls.update();
+            renderer.render(scene, camera);
         }
 
-        function onWindowResize() {
+        function onResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        function updateUIPanel(data) {
-            if (!data) {
-                // Restore default idle UI state
-                uiPanel.classList.remove('active');
-                document.body.classList.remove('cursor-pointer');
-                nodeId.textContent = "SYS_IDLE";
-                nodeTitle.textContent = "全域系统就绪";
-                uiPanel.style.setProperty('--theme-color', "#ffffff");
-                nodeLed.style.backgroundColor = "#ffffff";
-                nodeLed.style.boxShadow = `0 0 15px rgba(255,255,255,0.5)`;
-                nodeDesc.textContent = "通过悬停于中心 3D 芯片的各个物理模块结构（如大中央核心、边缘显存区），探测并建立至对应的神经网络分部。";
-
-                document.getElementById('node-alloc').textContent = "架构系统状态";
-                document.getElementById('node-peak').textContent = "AWAITING INPUT...";
-
-                connectBtn.textContent = "未发现活动链路";
-                connectBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                connectBtn.classList.remove('hover:bg-white', 'hover:text-black');
-                return;
-            }
-
-            uiPanel.classList.add('active');
-            document.body.classList.add('cursor-pointer');
-
-            nodeId.textContent = data.id;
-            nodeTitle.textContent = data.title;
-            uiPanel.style.setProperty('--theme-color', data.color);
-            nodeLed.style.backgroundColor = data.color;
-            nodeLed.style.boxShadow = `0 0 15px ${data.color}`;
-            nodeDesc.textContent = data.desc;
-
-            document.getElementById('node-alloc').textContent = "当前流转带宽";
-            document.getElementById('node-peak').textContent = "100% 满血峰值";
-
-            connectBtn.textContent = "已就绪：点击左侧神经元接通 →";
-            connectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            connectBtn.classList.add('hover:bg-white', 'hover:text-black');
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-
-            const time = performance.now() * 0.005;
-
-            // Handle Raycasting
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(interactiveMeshes);
-
-            let newHoverData = null;
-            if (intersects.length > 0) {
-                newHoverData = intersects[0].object.userData;
-            }
-
-            if (newHoverData !== hoveredData) {
-                hoveredData = newHoverData;
-                updateUIPanel(hoveredData);
-            }
-
-            // Update Emissive colors on all meshes
-            interactiveMeshes.forEach(mesh => {
-                const dt = mesh.userData;
-                if (hoveredData && dt === hoveredData) {
-                    // Activate this group
-                    mesh.material.emissive.set(dt.color);
-                    mesh.material.emissiveIntensity = (Math.sin(time) + 1.0) * 0.6 + 0.2;
-                } else {
-                    // Idle state
-                    mesh.material.emissive.setHex(0x000000);
-                }
-            });
-
-            renderer.render(scene, camera);
-        }
+        init();
     </script>
 </body>
-
 </html>
