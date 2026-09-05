@@ -33,10 +33,10 @@ function buildStudioEnv() {
         m.lookAt(0, 0, 0);
         s.add(m);
     };
-    panel(60, 34, 0, 22, 0, 0xffffff, 2.4);             // overhead softbox
-    panel(44, 30, -17, 8, 0, 0xffffff, 1.6);            // left fill
-    panel(44, 30, 17, 8, 0, 0xffd9a8, 1.1);             // right warm strip
-    panel(26, 18, 0, 6, 15, 0xbfc8d8, .5);               // far cool backdrop
+    panel(60, 34, 0, 22, 0, 0xffffff, 1.8);             // overhead softbox
+    panel(44, 30, -17, 8, 0, 0xffffff, 1.25);           // left fill
+    panel(44, 30, 17, 8, 0, 0xffd9a8, .9);              // right warm strip
+    panel(26, 18, 0, 6, 15, 0xbfc8d8, .45);              // far cool backdrop
     for (const c of [0x111217, 0x14161c]) {              // dark floor shadow area
         const f = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
         f.rotation.x = Math.PI / 2; f.position.y = -12;
@@ -99,7 +99,7 @@ async function buildEnvironment() {
         renderer.shadowMap.type = THREE.PCFShadowMap;
     }
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.06;
     $('scene').appendChild(renderer.domElement);
 
     setControls(new OrbitControls(camera, renderer.domElement));
@@ -116,7 +116,7 @@ async function buildEnvironment() {
         const pmrem = new Pmrem(renderer);
         scene.environment = pmrem.fromScene(buildStudioEnv(), .04).texture;
     } catch (e) { console.warn('env map unavailable', e); }
-    scene.environmentIntensity = 1.15;   // r16x+: global IBL scale, no per-material juggling
+    scene.environmentIntensity = 1.05;   // r16x+: global IBL scale, no per-material juggling
 
     scene.add(new THREE.AmbientLight(0xffffff, .22));
     const main = new THREE.DirectionalLight(0xfff2dd, 1.15);

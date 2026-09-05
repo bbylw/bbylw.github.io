@@ -88,8 +88,12 @@
     .info-panel {
         position: fixed; left: 32px; top: 50%; transform: translateY(-50%);
         z-index: 100; width: 262px;
-        max-height: calc(100vh - 170px);
+        max-height: calc(100vh - 160px);
         display: flex; flex-direction: column; gap: 12px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,.18) transparent;
     }
     .info-title { font-size: 1.5rem; font-weight: 300; line-height: 1.25; }
     .info-subtitle { font-size: .78rem; color: var(--txt-mid); line-height: 1.55; margin-top: 8px; }
@@ -142,7 +146,12 @@
     .control-panel {
         position: fixed; right: 32px; top: 50%; transform: translateY(-50%);
         z-index: 100; width: 186px;
+        max-height: calc(100vh - 180px);
         display: flex; flex-direction: column; gap: 12px;
+        overflow-y: auto;               /* keep every control reachable on short windows */
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,.18) transparent;
     }
     .control-group { padding: 12px; }
     .control-group-title {
@@ -307,6 +316,23 @@
         .header, .controls { padding: 14px 18px; }
         .nav-link { padding: 8px 13px; font-size: .7rem; }
         #feed { bottom: 86px; }
+    }
+    /* Short windows: anchor the side panels in the gap between the header and
+       the bottom nav (instead of centering), so every control stays reachable
+       and never hides underneath the bottom nav bar. */
+    @media (max-height: 760px) {
+        .control-panel, .info-panel {
+            top: 88px; bottom: 96px;
+            transform: none;
+            max-height: none;
+        }
+    }
+    @media (max-height: 680px) {
+        .control-panel { gap: 8px; }
+        .control-group { padding: 8px 10px; }
+        .control-group-title { margin-bottom: 5px; }
+        .control-btn { padding: 6px 9px; margin-bottom: 3px; }
+        .seg .control-btn { padding: 7px 4px; }
     }
 
     /* ---------- A11y & motion preferences ---------- */

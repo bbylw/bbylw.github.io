@@ -91,7 +91,7 @@ function animate() {
     updateSpark(tNow);
 
     if (coreLight) {
-        const tgt = .35 + sim.u * 2.2;
+        const tgt = .28 + sim.u * 1.65;
         coreLight.intensity += (tgt - coreLight.intensity) * (1 - Math.exp(-dt / .18));
         coreLight.position.y = sd.coreY;
         coreLight.color.lerpColors(CORE_COOL, CORE_HOT, Math.min(1, Math.max(0, (sim.u - .15) / .55)));
@@ -111,10 +111,11 @@ function animate() {
     const mActive = models[state.style];
     updateContactShadows(state.style, mActive ? mActive.explodeCur : 0);
     if (composer && composer.bloomPass) {
-        // hot surfaces get more glow as load climbs (manual fxbloom stays fixed)
+        // hot surfaces get more glow as load climbs, but capped so white-hot
+        // highlights at glancing angles never wash out the scene (fxbloom fixed)
         composer.bloomPass.strength = composer.bloomFixed
             ? composer.bloomBase
-            : composer.bloomBase * (.8 + .55 * sim.u);
+            : composer.bloomBase * (.7 + .3 * sim.u);
     }
 
     // camera intro ease (after the boot overlay lifts)
@@ -167,10 +168,14 @@ async function init() {
         state.wireframe = true;
         setWireframe(true);
         $('btn-wireframe').classList.add('active');
+        $('btn-wireframe').setAttribute('aria-pressed', 'true');
     }
 
     composer = createComposer(renderer, scene, camera);
-    if (reduceMotion) $('btn-rotate').classList.remove('active');   // auto-rotate defaulted off
+    if (reduceMotion) {                          // auto-rotate defaulted off
+        $('btn-rotate').classList.remove('active');
+        $('btn-rotate').setAttribute('aria-pressed', 'false');
+    }
     runBoot();
     renderer.setAnimationLoop(frame);
     feed('renderer backend · ' + (backend === 'webgpu' ? 'WebGPU (r185)' : 'WebGL2 (r185)'), 'info');
@@ -182,10 +187,12 @@ async function init() {
         if (h.indexOf('explode') >= 0) {
             state.exploded = true;
             $('btn-explode').classList.add('active');
+            $('btn-explode').setAttribute('aria-pressed', 'true');
         }
         if (h.indexOf('stress') >= 0) {
             state.stress = true;
             $('btn-stress').classList.add('active');
+            $('btn-stress').setAttribute('aria-pressed', 'true');
         }
     }, 3400);
 }

@@ -19,6 +19,9 @@ function setStyle(styleKey, silent) {
     $('info-subtitle').textContent = sd.subtitle;
     $('spec-hint').textContent = sd.label;
 
+    $('btn-cpu').setAttribute('aria-checked', styleKey === 'cpu' ? 'true' : 'false');
+    $('btn-accel').setAttribute('aria-checked', styleKey === 'accel' ? 'true' : 'false');
+
     const sr = $('spec-rows');
     sr.innerHTML = '';
     sd.specs.forEach((pair) => {
@@ -98,7 +101,21 @@ function bindPress(el, fn) {
 }
 
 function setupUI() {
-    const setBtn = (id, on) => $(id).classList.toggle('active', on);
+    /* Module buttons are a radio group (aria-checked); the rest are toggles
+       (aria-pressed) except Reset, which is a plain command button. */
+    const setBtn = (id, on) => {
+        const el = $(id);
+        el.classList.toggle('active', on);
+        const attr = id === 'btn-cpu' || id === 'btn-accel' ? 'aria-checked' : 'aria-pressed';
+        if (attr === 'aria-pressed' && id === 'btn-reset') return;
+        el.setAttribute(attr, on ? 'true' : 'false');
+    };
+    // seed ARIA state from the initial markup so it matches from the first frame
+    for (const id of ['btn-cpu', 'btn-accel', 'btn-rotate', 'btn-explode', 'btn-wireframe', 'btn-reset', 'btn-data', 'btn-stress']) {
+        const el = $(id);
+        const on = el.classList.contains('active');
+        setBtn(id, on);
+    }
 
     const togRotate = () => {
         state.autoRotate = !state.autoRotate;
