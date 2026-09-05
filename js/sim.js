@@ -53,14 +53,37 @@ function simStep(dt, timeNow) {
         spikeOn = true;
     }
 
-    /* power-capping: throttle cuts utilisation; spikes / stress raise the PL2 envelope */
-    const pl2 = state.stress ? (m.throttle ? 1 : th.pl2) : (spikeOn && !m.throttle ? 1.13 : 1);
-    if (spikeOn && !sim.spikeFed && bootDone && timeNow - (sim._spikeFedAt || 0) > 12000) {
-        sim.spikeFed = true;
-        sim._spikeFedAt = timeNow;
-        feed('PL2 turbo burst · envelope raised to ' + Math.round(sd.maxW * 1.13) + ' W', 'info');
+    /* ---- PL2 turbo budget ----
+       spikes may exceed the base envelope only while budget remains; it
+       drains during boost and slowly regenerates back at idle. */
+    let turboMult = 1;
+    if (!state.stress) {
+        if (spikeOn && !m.throttle) {
+            if (sim.turbo > 0) {
+                turboMult = 1.13;
+                sim.turbo -= dt / (th.turbo || 12);
+                if (!sim.spikeFed && bootDone && timeNow - (sim._spikeFedAt || 0) > 12000) {
+                    sim.spikeFed = true;
+                    sim._spikeFedAt = timeNow;
+                    feed('PL2 turbo burst · envelope raised to ' + Math.round(sd.maxW * 1.13) + ' W', 'info');
+                }
+                if (sim.turbo <= 0 && !sim._turboExh && bootDone && timeNow - (sim._turboFedAt || 0) > 20000) {
+                    sim._turboExh = true;
+                    sim._turboFedAt = timeNow;
+                    feed('PL2 budget spent — power back to base envelope', 'info');
+                }
+            }
+        } else if (sim.turbo < 1) {
+            sim.turbo = Math.min(1, sim.turbo + dt / (th.turboRec || 26));
+            if (sim.turbo > .95) sim._turboExh = false;
+        }
     }
-    target *= m.throttle ? .55 : 1;
+    const pl2 = state.stress ? (m.throttle ? 1 : th.pl2) : turboMult;
+
+    /* thermal power-limit — continuous instead of a hard two-state cut */
+    const overT = Math.max(0, T.d - sd.throttleT);
+    const powerLimit = m.throttle ? Math.max(.42, Math.min(1, 1 - overT / 16)) : 1;
+    target *= powerLimit;
 
     /* a resident workload drifts organically (±few %) instead of sitting flat */
     sim._drift = (sim._drift || 0) + dt * (.25 + sim.u * .9);
@@ -82,7 +105,8 @@ function simStep(dt, timeNow) {
 
     /* ---- lumped thermal network, explicit Euler (time-accelerated) ---- */
     const edt = Math.min(dt, .05) * 4;
-    const amb = th.amb;
+    // room air drifts slowly (±0.5 °C, ~6 min period) so long runs feel alive
+    const amb = th.amb + .5 * Math.sin(timeNow * 1.7e-5);
     const nat = th.kNat * Math.pow(Math.max(.1, (T.f - amb) / 10), .35);   // natural convection
     const kFa = nat + th.kFan * Math.pow(m.fanv, 1.25);                     // + forced airflow
 
@@ -97,6 +121,7 @@ function simStep(dt, timeNow) {
        so the physics stay clean but the gauge reads like a real sensor */
     const jitter = (Math.random() - .5) * .12 + Math.sin(timeNow * .0023) * .08;
     sim.temp += ((T.d + jitter) - sim.temp) * (1 - Math.exp(-dt / .35));
+    sim.temp = Math.round(sim.temp * 4) / 4;    // quantise to a 0.25 °C sensor LSB
 
     /* ---- fan / airflow controller (slewed, with idle floor) ---- */
     const fDead = 50;

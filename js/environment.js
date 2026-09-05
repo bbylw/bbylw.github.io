@@ -3,11 +3,10 @@
 ================================================================ */
 
 import { OrbitControls } from '../vendor/three/OrbitControls.js';
-import { RoomEnvironment } from '../vendor/three/RoomEnvironment.js';
 import * as THREE from 'three';
 import { COLORS, MODELS, airAnchor, airPoints, camera, cameraTargetHome, controls, coreLight, dustPoints, fluxPoints, haloPoints, models, renderer, scene, setAirAnchor, setAirPoints, setBackend, setCamera, setCameraHome, setCameraTargetHome, setControls, setCoreLight, setDustPoints, setFluxPoints, setHaloPoints, setRenderer, setScene, sim, state } from './state.js';
 import { $ } from './state.js';
-import { makeCanvas, toTexture } from './textures.js';
+import { contactShadowTexture, makeCanvas, toTexture } from './textures.js';
 
 function radialGlowTexture() {
     const S = 256;
@@ -22,19 +21,45 @@ function radialGlowTexture() {
     return toTexture(c);
 }
 
-/* Renderer preference: 'auto' (default) picks WebGPU when the browser exposes it,
-   falling back to WebGL2 on any init failure. '?renderer=webgpu|webgl' forces one. */
+/* Photo-studio reflection environment for IBL: a large overhead softbox,
+   two vertical side panels (one warm, one cool) over a dark shell. */
+function buildStudioEnv() {
+    const s = new THREE.Scene();
+    s.background = new THREE.Color(0x0a0b0e);
+    const panel = (w, h, x, y, z, c, n) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+            new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(n), side: THREE.DoubleSide, toneMapped: false }));
+        m.position.set(x, y, z);
+        m.lookAt(0, 0, 0);
+        s.add(m);
+    };
+    panel(60, 34, 0, 22, 0, 0xffffff, 2.4);             // overhead softbox
+    panel(44, 30, -17, 8, 0, 0xffffff, 1.6);            // left fill
+    panel(44, 30, 17, 8, 0, 0xffd9a8, 1.1);             // right warm strip
+    panel(26, 18, 0, 6, 15, 0xbfc8d8, .5);               // far cool backdrop
+    for (const c of [0x111217, 0x14161c]) {              // dark floor shadow area
+        const f = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide }));
+        f.rotation.x = Math.PI / 2; f.position.y = -12;
+        s.add(f);
+    }
+    return s;
+}
+
+/* Renderer preference: WebGL2 is the default — the complete, stable path (bloom
+   composer, wireframe, shadows; no r185 WebGPU pitfalls). WebGPU is opt-in via
+   '?renderer=webgpu' (experimental, auto-falls back to WebGL2 on init failure).
+   '?renderer=webgl' explicitly re-forces WebGL2. */
 function rendererPreference() {
     const q = (location.search || '').toLowerCase();
     if (q.indexOf('renderer=webgpu') >= 0) return 'webgpu';
-    if (q.indexOf('renderer=webgl') >= 0) return 'webgl';
-    return 'auto';
+    return 'webgl';
 }
+
+let blobCpu = null, blobAccel = null;
 
 async function makeRenderer() {
     const opts = { antialias: true, powerPreference: 'high-performance' };
-    const pref = rendererPreference();
-    const wantGPU = pref === 'webgpu' || (pref === 'auto' && typeof navigator !== 'undefined' && !!navigator.gpu);
+    const wantGPU = rendererPreference() === 'webgpu';
     if (wantGPU) {
         try {
             const W = await import('three/webgpu');
@@ -89,7 +114,7 @@ async function buildEnvironment() {
 
     try {
         const pmrem = new Pmrem(renderer);
-        scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+        scene.environment = pmrem.fromScene(buildStudioEnv(), .04).texture;
     } catch (e) { console.warn('env map unavailable', e); }
     scene.environmentIntensity = 1.15;   // r16x+: global IBL scale, no per-material juggling
 
@@ -117,7 +142,7 @@ async function buildEnvironment() {
 
     const floor = new THREE.Mesh(
         new THREE.CircleGeometry(55, 72),
-        new THREE.MeshStandardMaterial({ color: 0x0a0b10, metalness: .85, roughness: .28, envMapIntensity: .5 })
+        new THREE.MeshStandardMaterial({ color: 0x0a0b10, metalness: .82, roughness: .34, envMapIntensity: .45 })
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -1.12;
@@ -140,7 +165,33 @@ async function buildEnvironment() {
         scene.add(ring);
     }
 
+    /* soft contact/AO blob under each module — darkens just above the floor */
+    const blobTex = contactShadowTexture();
+    const mkBlob = (r) => {
+        const b = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2),
+            new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, opacity: 0, depthWrite: false }));
+        b.rotation.x = -Math.PI / 2;
+        b.position.y = -1.118;
+        b.renderOrder = 3;
+        scene.add(b);
+        return b;
+    };
+    blobCpu = mkBlob(11.5);
+    blobAccel = mkBlob(10);
+    blobCpu.visible = false;
+    blobAccel.visible = false;
+
     return bk;
+}
+
+/* called every frame: keep only the active module's contact shadow, fading
+   it out as the stack explodes apart */
+export function updateContactShadows(activeKey, explodeAmt) {
+    if (!blobCpu) return;
+    const on = activeKey === 'cpu' ? blobCpu : blobAccel;
+    if (blobCpu.visible !== (activeKey === 'cpu')) blobCpu.visible = activeKey === 'cpu';
+    if (blobAccel.visible !== (activeKey === 'accel')) blobAccel.visible = activeKey === 'accel';
+    on.material.opacity = .6 * (1 - Math.min(1, Math.max(0, explodeAmt)));
 }
 
 /* ================================================================
@@ -194,7 +245,9 @@ function updateHalo(time, load, dt) {
     const st = haloPoints.geometry.userData.states;
     const arr = haloPoints.geometry.attributes.position.array;
     const Rm = sd.haloR + 1.15;
-    const speedScale = .55 + load * 2.1;
+    // hotter die = more excited halo ring (speed ramps with junction temp too)
+    const heat = Math.min(1, Math.max(0, (sim.temp - 38) / 60));
+    const speedScale = (.55 + load * 2.1) * (1 + heat * .45);
     for (let i = 0; i < st.length; i++) {
         const p = st[i];
         p.ang += p.dir * p.spd * speedScale * dt;
@@ -274,18 +327,39 @@ function buildAmbient() {
     scene.add(airPoints);
 }
 
+let fanAnchorW = null;   // scratch world position for the dust-push test
+
 function updateDust(time, dt) {
     if (!dustPoints) return;
     const ds = dustPoints.geometry.userData.states;
     const arr = dustPoints.geometry.attributes.position.array;
+    const cpu = models.cpu;
+    const fanOn = state.style === 'cpu' && state.exploded && state.showData &&
+        cpu && cpu.group.visible && cpu.fanAnchor && sim.fan > .24;
+    if (fanOn) {
+        if (!fanAnchorW) fanAnchorW = new THREE.Vector3();
+        cpu.fanAnchor.getWorldPosition(fanAnchorW);
+    }
     for (let i = 0; i < ds.length; i++) {
         const p = ds[i];
         p.a += p.sp * dt;
         p.y += p.dy * .12 * dt;
         if (p.y > 10) p.y = .6;
-        arr[i * 3] = Math.cos(p.a) * p.r;
+        let x = Math.cos(p.a) * p.r;
+        const z = Math.sin(p.a) * p.r;
+        // motes drifting through the fan's exhaust stream get pushed along +X
+        if (fanOn) {
+            const dy = p.y + Math.sin(time * .5 + p.ph) * .5 - fanAnchorW.y;
+            if (Math.abs(dy) < 2.8) {
+                const dx = x - fanAnchorW.x;
+                if (dx > -1.5 && dx < 14) {
+                    x += dt * sim.fan * (1 - Math.max(0, dx) / 15) * 1.6 * 4;
+                }
+            }
+        }
+        arr[i * 3] = x;
         arr[i * 3 + 1] = p.y + Math.sin(time * .5 + p.ph) * .5;
-        arr[i * 3 + 2] = Math.sin(p.a) * p.r;
+        arr[i * 3 + 2] = z;
     }
     dustPoints.geometry.attributes.position.needsUpdate = true;
 }

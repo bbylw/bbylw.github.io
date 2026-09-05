@@ -22,10 +22,15 @@ export function createComposer(renderer, scene, camera) {
     let bloom = [.35, .6, .9];
     const m = (location.search || '').toLowerCase().match(/fxbloom=([\d.]+),([\d.]+),([\d.]+)/);
     if (m) bloom = [+m[1], +m[2], +m[3]];
-    composer.addPass(new UnrealBloomPass(
+    const bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
         bloom[0], bloom[1], bloom[2]
-    ));
+    );
+    composer.addPass(bloomPass);
     composer.addPass(new OutputPass());
+    // app.js eases bloom strength with thermal load (manual fxbloom stays fixed)
+    composer.bloomPass = bloomPass;
+    composer.bloomBase = bloom[0];
+    composer.bloomFixed = !!m;
     return composer;
 }

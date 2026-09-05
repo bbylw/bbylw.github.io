@@ -7,7 +7,7 @@ import { addPart, boxMesh, std, topFaceMats } from './builders.js';
 import { makeHeatGrid } from './heat.js';
 import { createBoardMonitor } from './monitor.js';
 import { COLORS } from './state.js';
-import { dieTexture, hbmSideTexture, pcbAccelTexture } from './textures.js';
+import { brushRoughnessTexture, copperOxideTexture, dieTexture, hbmSideTexture, interposerTracesTexture, pcbAccelTexture } from './textures.js';
 
 function buildAccel() {
     const model = { group: new THREE.Group(), layers: {}, parts: [], scale: 1, explodeCur: 0, fanSpin: null,
@@ -68,7 +68,11 @@ function buildAccel() {
 
     /* Module: interposer + die + HBM */
     const modLayer = new THREE.Group();
-    const interposer = boxMesh(12.4, 1.0, 12.4, std(0x1b1510, .6, .2));
+    const ipSide = std(0x1b1510, .6, .2);
+    const interposer = new THREE.Mesh(new THREE.BoxGeometry(12.4, 1.0, 12.4),
+        topFaceMats(ipSide,
+            new THREE.MeshStandardMaterial({ map: interposerTracesTexture(), color: 0xffffff, roughness: .5, metalness: .35 }),
+            0x100d09));
     interposer.position.y = .5;
     interposer.receiveShadow = true;
     modLayer.add(interposer);
@@ -92,6 +96,7 @@ function buildAccel() {
 
     const hbmBody = std(COLORS.hbm, .4, .25);
     const hbmLabel = new THREE.MeshStandardMaterial({ map: hbmSideTexture(), roughness: .38, metalness: .55 });
+    const sealMat = std(0x14151a, .55, .15);
     const stackW = 2.15, stackZ = 2.15, stackH = 1.3;
     const hbmRoot = new THREE.Group();
     for (const sgn of [-1, 1]) {
@@ -111,11 +116,22 @@ function buildAccel() {
             const xPlate = new THREE.Mesh(new THREE.BoxGeometry(.02, .44, 1.7), hbmLabel);
             xPlate.position.set(sgn * (stackW / 2 + .011), 1.6, 0);
             sg.add(xPlate);
+            // dark seal strip on the inward x face — wraps the stack visually
+            const iPlate = new THREE.Mesh(new THREE.BoxGeometry(.02, .34, 1.5), sealMat);
+            iPlate.position.set(-sgn * (stackW / 2 + .012), 1.64, 0);
+            sg.add(iPlate);
             // plus plates on the outermost z faces of each column
             if (i !== 0) {
                 const zPlate = new THREE.Mesh(new THREE.BoxGeometry(1.7, .44, .02), hbmLabel);
                 zPlate.position.set(0, 1.6, Math.sign(i) * (stackZ / 2 + .011));
                 sg.add(zPlate);
+            } else {
+                // middle column still gets slim seal strips on both z faces
+                for (const zs of [-1, 1]) {
+                    const zSeal = new THREE.Mesh(new THREE.BoxGeometry(1.5, .3, .02), sealMat);
+                    zSeal.position.set(0, 1.66, zs * (stackZ / 2 + .012));
+                    sg.add(zSeal);
+                }
             }
             hbmRoot.add(sg);
             const col = sgn < 0 ? 'A' : 'B';
@@ -134,6 +150,7 @@ function buildAccel() {
     const coolerLayer = new THREE.Group();
     const hotPlate = makeHeatGrid(48, .24, .76, .24, .76, 9);   // die footprint seen through the plate
     const plateMat = new THREE.MeshPhysicalMaterial({ color: 0x9aa0a6, roughness: .22, metalness: .95,
+        roughnessMap: brushRoughnessTexture(),
         clearcoat: .4, clearcoatRoughness: .22, envMapIntensity: 1.25,
         emissive: 0xff9a33, emissiveIntensity: .34, emissiveMap: hotPlate.tex });
     const plate = boxMesh(12.8, .55, 12.8, plateMat);
@@ -148,8 +165,9 @@ function buildAccel() {
         f.position.set(-5.9 + i * .59, 4.7, 0);
         coolerLayer.add(f);
     }
+    const aPipeTex = copperOxideTexture();
     for (const pz of [-6.05, 6.05]) {
-        const pipeMat = std(COLORS.copper, .3, .92);
+        const pipeMat = new THREE.MeshStandardMaterial({ map: aPipeTex, color: 0xffffff, roughness: .3, metalness: .92 });
         const pipe = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, 12.6, 12), pipeMat);
         pipe.rotation.x = Math.PI / 2;
         pipe.position.set(0, 3.28, pz);

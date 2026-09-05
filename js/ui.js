@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { clearSparkHistory } from './dom.js';
 import { feed } from './feed.js';
 import { pickWorkload } from './sim.js';
-import { MODELS, bboxLines, bootDone, camera, cameraHome, cameraTargetHome, controls, models, reduceMotion, renderer, sim, state, tipEl, tipName, tipSpec } from './state.js';
+import { MODELS, backend, bboxLines, bootDone, camera, cameraHome, cameraTargetHome, controls, models, reduceMotion, renderer, sim, state, tipEl, tipName, tipSpec } from './state.js';
 import { $ } from './state.js';
 
 function setStyle(styleKey, silent) {
@@ -76,6 +76,27 @@ function setStyle(styleKey, silent) {
     }
 }
 
+/* Activate controls on pointerdown (instant response, no lost clicks on janky
+   frames) instead of waiting for mouseup + click. The synthetic click that
+   follows a press is swallowed; keyboard/AT activation (no prior pointerdown)
+   still goes through the click listener untouched. */
+function bindPress(el, fn) {
+    let armed = false;
+    el.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        armed = true;
+        fn();
+    });
+    el.addEventListener('click', (e) => {
+        if (!armed) return;                 // keyboard or assistive-tech activation
+        armed = false;
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    el.addEventListener('pointerleave', () => { armed = false; });
+    el.addEventListener('pointercancel', () => { armed = false; });
+}
+
 function setupUI() {
     const setBtn = (id, on) => $(id).classList.toggle('active', on);
 
@@ -90,6 +111,18 @@ function setupUI() {
         feed(state.exploded ? 'exploded view — layer stack separated' : 'stack reassembled', 'info');
     };
     const togWire = () => {
+        if (!state.wireframe && backend === 'webgpu') {
+            /* three r185's WebGPU backend throws (setIndexBuffer on a null GPUBuffer)
+               when material.wireframe is enabled, killing the render loop — so on the
+               WebGPU path we hand the session over to WebGL2 and re-engage wireframe
+               there after the reload instead of freezing the page. */
+            sessionStorage.setItem('x1.wantWire', '1');
+            feed('wireframe view needs the WebGL backend — switching…', 'warn');
+            const u = new URL(location.href);
+            u.searchParams.set('renderer', 'webgl');
+            setTimeout(() => { location.href = u.href; }, 450);
+            return;
+        }
         state.wireframe = !state.wireframe;
         setBtn('btn-wireframe', state.wireframe);
         setWireframe(state.wireframe);
@@ -110,6 +143,7 @@ function setupUI() {
         state.wireframe = false;
         setBtn('btn-explode', false);
         setBtn('btn-rotate', state.autoRotate);
+        setBtn('btn-wireframe', false);         // wireframe is turned off on reset too
         controls.autoRotate = state.autoRotate; // keep controls in sync with the toggle
         setWireframe(false);
         camera.position.copy(cameraHome);
@@ -120,14 +154,14 @@ function setupUI() {
         feed('view reset', 'info');
     };
 
-    $('btn-cpu').addEventListener('click', () => setStyle('cpu'));
-    $('btn-accel').addEventListener('click', () => setStyle('accel'));
-    $('btn-rotate').addEventListener('click', togRotate);
-    $('btn-explode').addEventListener('click', togExplode);
-    $('btn-wireframe').addEventListener('click', togWire);
-    $('btn-data').addEventListener('click', togData);
-    $('btn-stress').addEventListener('click', togStress);
-    $('btn-reset').addEventListener('click', doReset);
+    bindPress($('btn-cpu'), () => setStyle('cpu'));
+    bindPress($('btn-accel'), () => setStyle('accel'));
+    bindPress($('btn-rotate'), togRotate);
+    bindPress($('btn-explode'), togExplode);
+    bindPress($('btn-wireframe'), togWire);
+    bindPress($('btn-data'), togData);
+    bindPress($('btn-stress'), togStress);
+    bindPress($('btn-reset'), doReset);
 
     /* keyboard shortcuts — same paths as the buttons (work after boot) */
     window.addEventListener('keydown', (e) => {

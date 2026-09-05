@@ -215,6 +215,180 @@ function hbmSideTexture() {
     return toTexture(ctx.canvas);
 }
 
+/* Directional brushed-metal roughness map (grayscale; bright = rougher).
+   Long horizontal lines + sparse micro-scratches — reads as machined metal. */
+function brushRoughnessTexture() {
+    const S = 512;
+    const ctx = makeCanvas(S, S).getContext('2d');
+    ctx.fillStyle = '#565656';                 // mid-rough base
+    ctx.fillRect(0, 0, S, S);
+    for (let i = 0; i < 1200; i++) {
+        const y = Math.random() * S;
+        const len = 30 + Math.random() * 460;
+        const x0 = Math.random() * (S - len);
+        ctx.strokeStyle = Math.random() < .5 ? 'rgba(255,255,255,' + (Math.random() * .16) + ')'
+            : 'rgba(0,0,0,' + (Math.random() * .2) + ')';
+        ctx.lineWidth = .4 + Math.random() * 1.1;
+        ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + len, y); ctx.stroke();
+    }
+    for (let i = 0; i < 260; i++) {            // random micro pits / speckle
+        ctx.fillStyle = 'rgba(255,255,255,' + (Math.random() * .08) + ')';
+        ctx.fillRect(Math.random() * S, Math.random() * S, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+    const t = toTexture(ctx.canvas);
+    t.colorSpace = THREE.NoColorSpace;         // non-color data
+    t.anisotropy = 8;
+    return t;
+}
+
+/* Copper colour with oxidation patches + bright polish streaks (heat pipes). */
+function copperOxideTexture() {
+    const S = 512;
+    const ctx = makeCanvas(S, S).getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, S, S);
+    g.addColorStop(0, '#a86830');
+    g.addColorStop(.5, '#c07a3c');
+    g.addColorStop(1, '#a5652c');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+    for (let i = 0; i < 130; i++) {            // oxidation / tarnish patches
+        const r = 12 + Math.random() * 90;
+        ctx.fillStyle = 'rgba(58,28,12,' + (Math.random() * .5 + .18) + ')';
+        ctx.beginPath();
+        ctx.arc(Math.random() * S, Math.random() * S, r, 0, 7);
+        ctx.fill();
+    }
+    for (let i = 0; i < 40; i++) {             // greenish patina hints
+        ctx.fillStyle = 'rgba(46,74,46,' + (Math.random() * .22) + ')';
+        ctx.beginPath();
+        ctx.arc(Math.random() * S, Math.random() * S, 6 + Math.random() * 36, 0, 7);
+        ctx.fill();
+    }
+    for (let i = 0; i < 500; i++) {            // polish streaks
+        ctx.strokeStyle = 'rgba(255,214,160,' + (Math.random() * .18) + ')';
+        ctx.lineWidth = .6 + Math.random() * 1.6;
+        ctx.beginPath();
+        const y = Math.random() * S;
+        ctx.moveTo(0, y);
+        ctx.lineTo(S, y + (Math.random() - .5) * 30);
+        ctx.stroke();
+    }
+    return toTexture(ctx.canvas);
+}
+
+/* LGA socket cavity: gold plate with a 22×22 contact-pin dot grid + locating marks. */
+function socketContactsTexture() {
+    const S = 1024, N = 22;
+    const ctx = makeCanvas(S, S).getContext('2d');
+    ctx.fillStyle = '#7c5c24';                 // socket base
+    ctx.fillRect(0, 0, S, S);
+    ctx.strokeStyle = 'rgba(40,26,6,.6)';
+    ctx.lineWidth = 18;
+    rr(ctx, 12, 12, S - 24, S - 24, 30); ctx.stroke();
+    const cell = S / N;
+    for (let ix = 0; ix < N; ix++) {
+        for (let iz = 0; iz < N; iz++) {
+            const cx = (ix + .5) * cell, cy = (iz + .5) * cell;
+            const even = (ix + iz) % 2 === 0;
+            ctx.fillStyle = even ? '#d9b054' : '#b98f3c';   // alternate pad shading
+            ctx.beginPath();
+            ctx.arc(cx, cy, cell * .3, 0, 7);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(40,26,6,.55)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, cell * .3, 0, 7);
+            ctx.stroke();
+        }
+    }
+    // corner chamfer notches (socket keying)
+    ctx.fillStyle = '#4c3a15';
+    for (const [x, y] of [[26, 26], [S - 26, 26], [26, S - 26]]) {
+        ctx.beginPath(); ctx.arc(x, y, 34, 0, 7); ctx.fill();
+    }
+    return toTexture(ctx.canvas);
+}
+
+/* Interposer top: dark base with gold fan-out traces radiating from the die
+   area toward the edge pads (mostly visible around the dies/HBM). */
+function interposerTracesTexture() {
+    const S = 1024;
+    const ctx = makeCanvas(S, S).getContext('2d');
+    ctx.fillStyle = '#201710';
+    ctx.fillRect(0, 0, S, S);
+    for (let i = 0; i < 9000; i++) {
+        ctx.fillStyle = 'rgba(255,190,110,' + (Math.random() * .05) + ')';
+        ctx.fillRect(Math.random() * S, Math.random() * S, 1.2, 1.2);
+    }
+    const ringIn = S * .26, ringOut = S * .47;
+    for (let i = 0; i < 700; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r0 = ringIn + Math.random() * (ringOut - ringIn);
+        const x0 = S / 2 + Math.cos(a) * r0;
+        const y0 = S / 2 + Math.sin(a) * r0;
+        ctx.strokeStyle = 'rgba(214,168,84,' + (Math.random() * .3 + .12) + ')';
+        ctx.lineWidth = .6 + Math.random() * 1.2;
+        ctx.beginPath(); ctx.moveTo(x0, y0);
+        const seg = 2 + (Math.random() * 3 | 0);
+        let x = x0, y = y0;
+        for (let s = 0; s < seg; s++) {
+            x += Math.cos(a + (Math.random() - .5) * .8) * (S * .5);
+            y += Math.sin(a + (Math.random() - .5) * .8) * (S * .5);
+            ctx.lineTo(Math.max(0, Math.min(S, x)), Math.max(0, Math.min(S, y)));
+        }
+        ctx.stroke();
+    }
+    // solder pad ring at the very edge
+    ctx.fillStyle = 'rgba(232,190,110,.5)';
+    for (let i = 0; i < 160; i++) {
+        const a = i / 160 * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(S / 2 + Math.cos(a) * S * .492, S / 2 + Math.sin(a) * S * .492, 4, 0, 7);
+        ctx.fill();
+    }
+    return toTexture(ctx.canvas);
+}
+
+/* Small round fan-hub sticker (used on a CircleGeometry disc). */
+function fanHubTexture() {
+    const S = 256;
+    const ctx = makeCanvas(S, S).getContext('2d');
+    ctx.clearRect(0, 0, S, S);
+    ctx.fillStyle = '#11141a';
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2 - 4, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#e8c47c';
+    ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2 - 16, 0, 7); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e8c47c';
+    ctx.font = '700 74px ui-monospace, Menlo, Consolas, monospace';
+    ctx.fillText('X1', S / 2, S / 2 + 4);
+    ctx.font = '600 26px ui-monospace, Menlo, Consolas, monospace';
+    ctx.fillStyle = 'rgba(232,196,124,.8)';
+    ctx.fillText('120 mm PWM', S / 2, S / 2 + 56);
+    ctx.fillStyle = 'rgba(232,196,124,.45)';
+    ctx.font = '500 18px ui-monospace, Menlo, Consolas, monospace';
+    ctx.fillText('NEURALCHIP', S / 2, S / 2 - 58);
+    const t = toTexture(ctx.canvas);
+    t.anisotropy = 4;
+    return t;
+}
+
+/* Soft radial shadow used as a contact/AO blob under each module. */
+function contactShadowTexture() {
+    const S = 256;
+    const c = makeCanvas(S, S);
+    const ctx = c.getContext('2d');
+    const grad = ctx.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    grad.addColorStop(0, 'rgba(0,0,0,.66)');
+    grad.addColorStop(.55, 'rgba(0,0,0,.34)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, S, S);
+    return toTexture(c);
+}
 
 
-export { makeCanvas, toTexture, rr, pcbCpuTexture, pcbAccelTexture, ihsTexture, dieTexture, hbmSideTexture };
+
+export { makeCanvas, toTexture, rr, pcbCpuTexture, pcbAccelTexture, ihsTexture, dieTexture, hbmSideTexture,
+    brushRoughnessTexture, copperOxideTexture, socketContactsTexture, interposerTracesTexture, fanHubTexture, contactShadowTexture };

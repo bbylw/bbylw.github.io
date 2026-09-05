@@ -165,6 +165,8 @@
     }
     .control-btn:last-child { margin-bottom: 0; }
     .control-btn:hover { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.16); color: #fff; }
+    .control-btn:active { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.28); transform: scale(.985); }
+    .control-btn.active:active { background: rgba(232,196,124,.18); }
     .control-btn.active { background: rgba(232,196,124,.09); border-color: var(--gold-soft); color: var(--gold); }
     .control-btn .icon { width: 16px; text-align: center; font-size: .86rem; flex: none; }
     .control-btn.danger.active { background: rgba(255,122,107,.1); border-color: rgba(255,122,107,.45); color: var(--danger); }

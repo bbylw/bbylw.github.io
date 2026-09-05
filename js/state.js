@@ -48,7 +48,7 @@ export const MODELS = {
         /* lumped thermal network — die / IHS / fin nodes
            k*: conductance W/K · c*: heat capacity J/K · kFan scales with fan 0..1
            pl2: transient power-envelope multiplier (Turbo / power virus) */
-        thermal: { kDie: 35, kPlate: 30, kNat: .6, kFan: 5.2, cDie: 35, cPlate: 180, cFin: 700, pl2: 1.38, minFan: .12, amb: 26 },
+        thermal: { kDie: 35, kPlate: 30, kNat: .6, kFan: 5.2, cDie: 35, cPlate: 180, cFin: 700, pl2: 1.38, minFan: .12, amb: 26, turbo: 12, turboRec: 26 },
         explode: { pcb: 0, socket: .7, pkg: 2.3, ihs: 4.2, cooler: 5.8 },
         haloR: 6.7, coreY: 1.6
     },
@@ -82,7 +82,7 @@ export const MODELS = {
         idleW: 110, maxW: 700, maxTops: 4096,
         idleT: 50, loadT: 86, throttleT: 97,
         fanLabel: 'Air',
-        thermal: { kDie: 80, kPlate: 60, kNat: 1.0, kFan: 15.5, cDie: 55, cPlate: 320, cFin: 1400, pl2: 1.4, minFan: .15, amb: 26 },
+        thermal: { kDie: 80, kPlate: 60, kNat: 1.0, kFan: 15.5, cDie: 55, cPlate: 320, cFin: 1400, pl2: 1.4, minFan: .15, amb: 26, turbo: 10, turboRec: 30 },
         explode: { carrier: 0, module: 2.4, cooler: 4.8 },
         haloR: 7.4, coreY: 2.6
     }
@@ -102,7 +102,8 @@ export const state = {
 export const models = {};
 export const sim = {
     u: 0.0, uTarget: 0.0, power: 0, temp: 30, fan: 0, throttle: false,
-    spikeAt: 0, spikeDur: 0, wlIndex: 0, wlUntil: 0, stressT: 0, mem: 0, bw: 0, wl: null
+    spikeAt: 0, spikeDur: 0, wlIndex: 0, wlUntil: 0, stressT: 0, mem: 0, bw: 0, wl: null,
+    turbo: 1      // PL2 turbo budget, 1 = full, drains to 0 and slowly regenerates
 };
 
 export let bootDone = false;

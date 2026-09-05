@@ -7,19 +7,46 @@ import { buildAccel } from './accel.js';
 import { runBoot } from './boot.js';
 import { buildCPU } from './cpu.js';
 import { updateDOM, updateSpark } from './dom.js';
-import { buildAmbient, buildEnvironment, buildParticles, updateAirflow, updateDust, updateFlux, updateHalo } from './environment.js';
+import { buildAmbient, buildEnvironment, buildParticles, updateAirflow, updateContactShadows, updateDust, updateFlux, updateHalo } from './environment.js';
 import { feed } from './feed.js';
 import { createComposer } from './fx.js';
 import { simStep, updateThermalVisuals } from './sim.js';
 import { COLORS, MODELS, backend, camera, cameraHome, clock, controls, coreLight, fluxPoints, haloPoints, introAt, models, reduceMotion, renderer, scene, setBboxLines, setClock, setIntroAt, sim, state } from './state.js';
 import { $ } from './state.js';
-import { setStyle, setupUI, updateHover } from './ui.js';
+import { setStyle, setupUI, setWireframe, updateHover } from './ui.js';
 
 const INTRO_FROM = new THREE.Vector3(44, 30, 44);          // camera flight start (matches boot camFrom)
 const CORE_COOL = new THREE.Color(0xe8c47c);               // core glow: amber at idle
 const CORE_HOT  = new THREE.Color(0xffe3ae);               // …drifts to hot white under load
 
 let composer = null;    // post-processing chain — present on the WebGL path
+
+/* Frame watchdog — three.js setAnimationLoop schedules the next frame only AFTER
+   the callback returns, so a single thrown error inside animate() kills the loop
+   forever (3D view + telemetry freeze while DOM buttons still fire — the app looks
+   dead). Guard the loop and, if the WebGPU backend keeps failing, hand the session
+   over to the stable WebGL2 backend via a ?renderer=webgl reload. */
+let frameFails = 0, lastFailLog = 0;
+function frame() {
+    try {
+        animate();
+        frameFails = 0;
+    } catch (err) {
+        frameFails++;
+        const now = performance.now();
+        if (frameFails === 1 || now - lastFailLog > 4000) {
+            lastFailLog = now;
+            console.error('[X1] frame error:', err);
+        }
+        if (frameFails >= 8 && backend === 'webgpu' && !sessionStorage.getItem('x1.rtried')) {
+            sessionStorage.setItem('x1.rtried', '1');
+            console.error('[X1] render loop unstable on WebGPU — switching to WebGL2');
+            const u = new URL(location.href);
+            u.searchParams.set('renderer', 'webgl');
+            location.href = u.href;
+        }
+    }
+}
 
 function animate() {
     clock.update();                          // r185 THREE.Timer — frame-rate independent
@@ -81,6 +108,15 @@ function animate() {
     updateDust(time, dt);
     updateAirflow(time, dt);
 
+    const mActive = models[state.style];
+    updateContactShadows(state.style, mActive ? mActive.explodeCur : 0);
+    if (composer && composer.bloomPass) {
+        // hot surfaces get more glow as load climbs (manual fxbloom stays fixed)
+        composer.bloomPass.strength = composer.bloomFixed
+            ? composer.bloomBase
+            : composer.bloomBase * (.8 + .55 * sim.u);
+    }
+
     // camera intro ease (after the boot overlay lifts)
     if (introAt !== null) {
         const p = Math.min(1, (performance.now() - introAt) / 1700);
@@ -102,7 +138,7 @@ async function init() {
     timer.connect(document);                 // pause-safe on tab switches
     setClock(timer);
 
-    await buildEnvironment();                // picks WebGPU (r185) or WebGL2, with env map
+    await buildEnvironment();                // default WebGL2 (full feature set); WebGPU opt-in via ?renderer=webgpu
     console.info('[X1] renderer backend:', backend);
 
     const edge = new THREE.LineSegments(
@@ -123,10 +159,20 @@ async function init() {
     buildAmbient();
     setStyle('cpu', true);
     setupUI();
+
+    // wireframe was requested while on the WebGPU backend (see togWire) — we
+    // reloaded into WebGL2 above, so re-engage the view now that it is safe.
+    if (backend !== 'webgpu' && sessionStorage.getItem('x1.wantWire') === '1') {
+        sessionStorage.removeItem('x1.wantWire');
+        state.wireframe = true;
+        setWireframe(true);
+        $('btn-wireframe').classList.add('active');
+    }
+
     composer = createComposer(renderer, scene, camera);
     if (reduceMotion) $('btn-rotate').classList.remove('active');   // auto-rotate defaulted off
     runBoot();
-    renderer.setAnimationLoop(animate);
+    renderer.setAnimationLoop(frame);
     feed('renderer backend · ' + (backend === 'webgpu' ? 'WebGPU (r185)' : 'WebGL2 (r185)'), 'info');
 
     /* deep-link helpers — #accel, #explode, #stress for quick demos */

@@ -7,7 +7,7 @@ import { addPart, boxMesh, std, topFaceMats } from './builders.js';
 import { makeHeatGrid } from './heat.js';
 import { createBoardMonitor } from './monitor.js';
 import { COLORS } from './state.js';
-import { dieTexture, ihsTexture, pcbCpuTexture } from './textures.js';
+import { brushRoughnessTexture, copperOxideTexture, dieTexture, fanHubTexture, ihsTexture, pcbCpuTexture, socketContactsTexture } from './textures.js';
 
 function buildCPU() {
     const model = { group: new THREE.Group(), layers: {}, parts: [], scale: 1, explodeCur: 0, fanSpin: null,
@@ -25,13 +25,24 @@ function buildCPU() {
     pcbLayer.add(pcb);
 
     const screwMat = std(0x6b7075, .3, .85);
+    const headMat = std(0x3a3d42, .25, .9);
+    const slotMat = std(0x14161a, .45, .25);
     for (const sx of [-9.8, 9.8]) for (const sz of [-9.8, 9.8]) {
         const scr = new THREE.Mesh(new THREE.CylinderGeometry(.55, .55, .24, 6), screwMat);
         scr.position.set(sx, .05, sz);
         pcbLayer.add(scr);
-        const head = new THREE.Mesh(new THREE.CylinderGeometry(.38, .38, .12, 6), std(0x3a3d42, .25, .9));
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(.38, .38, .12, 6), headMat);
         head.position.set(sx, .17, sz);
         pcbLayer.add(head);
+        // phillips cross recess — two thin slats, one slightly proud to avoid z-fighting
+        const slotA = new THREE.Mesh(new THREE.BoxGeometry(.52, .045, .1), slotMat);
+        slotA.rotation.y = 0;
+        slotA.position.set(sx, .255, sz);
+        pcbLayer.add(slotA);
+        const slotB = new THREE.Mesh(new THREE.BoxGeometry(.1, .045, .52), slotMat);
+        slotB.rotation.y = 0;
+        slotB.position.set(sx, .25, sz);
+        pcbLayer.add(slotB);
     }
 
     const capMat = std(0x1c1c20, .35, .7);
@@ -97,7 +108,11 @@ function buildCPU() {
     wall(11.9, .68, .9, 0, 5.5);
     wall(.9, .68, 11.0, -5.5, 0);
     wall(.9, .68, 11.0, 5.5, 0);
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(10.2, .09, 10.2), std(0xc9a45a, .35, .85));
+    const socketPadSide = std(0xc9a45a, .35, .85);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(10.2, .09, 10.2),
+        topFaceMats(socketPadSide,
+            new THREE.MeshStandardMaterial({ map: socketContactsTexture(), roughness: .28, metalness: .9 }),
+            0x6e531f));
     plate.position.y = .1;
     plate.receiveShadow = true;
     socketLayer.add(plate);
@@ -150,6 +165,7 @@ function buildCPU() {
     const ihsLayer = new THREE.Group();
     const hotIhs = makeHeatGrid(56, .205, .795, .205, .795, 10);  // die footprint on the lid
     const ihsMap = new THREE.MeshPhysicalMaterial({ map: ihsTexture(), roughness: .18, metalness: 1,
+        roughnessMap: brushRoughnessTexture(),
         clearcoat: .35, clearcoatRoughness: .25, envMapIntensity: 1.25,
         emissive: 0xff9a33, emissiveIntensity: .4, emissiveMap: hotIhs.tex });
     const ihs = new THREE.Mesh(new THREE.BoxGeometry(9, .42, 9), topFaceMats(std(COLORS.nickel, .28, .92), ihsMap, 0x8f959b));
@@ -186,16 +202,17 @@ function buildCPU() {
         f.position.set(-5 + i * .5, 4.39, 0);
         coolerLayer.add(f);
     }
+    const pipeTex = copperOxideTexture();
+    const pipeMat = new THREE.MeshStandardMaterial({ map: pipeTex, color: 0xffffff, roughness: .32, metalness: .9 });
+    const pcapMat = new THREE.MeshStandardMaterial({ map: pipeTex, color: 0xffffff, roughness: .34, metalness: .9 });
     for (const sgn of [-1, 1]) {
         const cap = boxMesh(.12, 3.7, 9.8, std(0x8a9095, .4, .85));
         cap.position.set(sgn * 5.22, 4.39, 0);
         coolerLayer.add(cap);
         for (const pz of [-2.4, 2.4]) {
-            const pipeMat = std(COLORS.copper, .3, .9);
             const pipe = new THREE.Mesh(new THREE.CylinderGeometry(.24, .24, 4.1, 10), pipeMat);
             pipe.position.set(sgn * 5.62, 4.4, pz);
             coolerLayer.add(pipe);
-            const pcapMat = std(0x8a5320, .3, .9);
             const pcap = new THREE.Mesh(new THREE.CylinderGeometry(.3, .3, .08, 10), pcapMat);
             pcap.position.set(sgn * 5.62, 6.5, pz);
             coolerLayer.add(pcap);
@@ -226,6 +243,11 @@ function buildFanAssembly() {
     const hub = new THREE.Mesh(new THREE.CylinderGeometry(.62, .62, .62, 18), std(0x2a2d33, .4, .6));
     hub.rotation.x = Math.PI / 2;
     spin.add(hub);
+    // rotating hub sticker disc
+    const sticker = new THREE.Mesh(new THREE.CircleGeometry(.57, 26),
+        new THREE.MeshStandardMaterial({ map: fanHubTexture(), roughness: .5, metalness: .1 }));
+    sticker.position.z = .316;
+    spin.add(sticker);
 
     const bladeMat = std(0x0f1114, .25, .2);
     for (let i = 0; i < 7; i++) {
@@ -254,6 +276,14 @@ function buildFanAssembly() {
     const g2 = boxMesh(.09, .07, 2.6, guardMat);
     g2.position.z = -.15;
     root.add(g1, g2);
+    // concentric guard-ring detail on the intake face
+    const grMat = std(0x1c1e23, .55, .2, { transparent: true, opacity: .55 });
+    for (const gr of [1.45, 2.05]) {
+        const ringG = new THREE.Mesh(new THREE.TorusGeometry(gr, .022, 6, 42), grMat);
+        ringG.rotation.x = Math.PI / 2;
+        ringG.position.z = -.17;
+        root.add(ringG);
+    }
     root.add(spin);
     root.rotation.y = Math.PI / 2;
     return root;
