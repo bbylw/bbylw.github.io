@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Neural Chip X1 — interactive 3D teardown of the X1-C neural CPU and X1-A AI accelerator, with live power/thermal/fan telemetry.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23e8c47c'/%3E%3Cpath d='M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z' fill='%23161410'/%3E%3C/svg%3E">
+<title>Neural Chip X1 · AI Processor</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="boot">
+    <div class="boot-card">
+        <div class="boot-head">
+            <div class="boot-logo">
+                <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+            </div>
+            <div>
+                <div class="boot-title">Neural Chip X1</div>
+                <div class="boot-sub">Power-On Self Test</div>
+            </div>
+        </div>
+        <div id="boot-log"></div>
+        <div class="boot-progress">
+            <div class="boot-bar"><div class="boot-bar-fill" id="boot-bar-fill"></div></div>
+            <div class="boot-pct" id="boot-pct">0%</div>
+        </div>
+    </div>
+</div>
+
+<div class="vignette"></div>
+<div id="scene"></div>
+
+<div id="hover-tip">
+    <div class="tip-name" id="tip-name"></div>
+    <div class="tip-spec" id="tip-spec"></div>
+</div>
+
+<!-- ================= header ================= -->
+<div class="header">
+    <div class="brand">
+        <div class="brand-mark">
+            <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+        </div>
+        <div>
+            <div class="brand-name">Neural Chip X1</div>
+            <div class="brand-model" id="brand-model">X1-C · CPU Module</div>
+        </div>
+    </div>
+
+    <div class="header-right">
+        <div class="status-pill">
+            <div class="status-dot" id="status-dot"></div>
+            <span id="status-text">POWER-ON</span>
+        </div>
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Compute</div>
+                <div class="metric-value accent" id="m-compute">0<span class="metric-unit">TOPS</span></div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Power</div>
+                <div class="metric-value" id="m-power">0<span class="metric-unit">W</span></div>
+            </div>
+            <div class="metric">
+                <div class="metric-label" id="m-fan-label">Fan</div>
+                <div class="metric-value" id="m-fan">0<span class="metric-unit">%</span></div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Temp</div>
+                <div class="metric-value" id="m-temp">0<span class="metric-unit">°C</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= info panel ================= -->
+<div class="info-panel">
+    <div class="group" style="padding:16px 18px;">
+        <div class="info-title" id="info-title">Neural Chip<br>X1-C · AI Processor</div>
+        <div class="info-subtitle" id="info-subtitle"></div>
+    </div>
+    <div class="group">
+        <div class="group-title">Specifications <span class="hint" id="spec-hint">X1-C</span></div>
+        <div id="spec-rows"></div>
+    </div>
+    <div class="group">
+        <div class="group-title">Live Telemetry</div>
+        <div class="workload-line">
+            <span class="wl-name" id="wl-name">—</span>
+            <span class="wl-pct" id="wl-pct">—</span>
+        </div>
+        <div id="tele-rows"></div>
+        <div class="trends">
+            <div class="trend"><div class="trend-label">Power · trend</div><canvas id="spark-power" width="120" height="30"></canvas></div>
+            <div class="trend"><div class="trend-label">Temp · trend</div><canvas id="spark-temp" width="120" height="30"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= control panel ================= -->
+<div class="control-panel">
+    <div class="group control-group">
+        <div class="control-group-title">Module</div>
+        <div class="seg">
+            <button class="control-btn active" id="btn-cpu" title="Switch module · X1-C CPU  [1]"><span class="icon">⬢</span>X1-C CPU</button>
+            <button class="control-btn" id="btn-accel" title="Switch module · X1-A AI accelerator  [2]"><span class="icon">▣</span>X1-A AI</button>
+        </div>
+    </div>
+    <div class="group control-group">
+        <div class="control-group-title">View</div>
+        <button class="control-btn active" id="btn-rotate" title="Toggle auto rotation  [A]"><span class="icon">↻</span>Auto Rotate</button>
+        <button class="control-btn" id="btn-explode" title="Explode / reassemble the layer stack  [X]"><span class="icon">⇕</span>Explode View</button>
+        <button class="control-btn" id="btn-wireframe" title="Toggle wireframe shading  [W]"><span class="icon">◇</span>Wireframe</button>
+        <button class="control-btn" id="btn-reset" title="Reset camera & view  [R]"><span class="icon">⟲</span>Reset View</button>
+    </div>
+    <div class="group control-group">
+        <div class="control-group-title">Runtime</div>
+        <button class="control-btn active" id="btn-data" title="Toggle data-flow particles  [D]"><span class="icon">◈</span>Data Flow</button>
+        <button class="control-btn danger" id="btn-stress" title="Engage / release full-load stress  [S]"><span class="icon">⚡</span>Stress Test</button>
+    </div>
+</div>
+
+<!-- ================= bottom links ================= -->
+<div class="controls">
+    <a href="https://pornavp.onrender.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">🧭</span>AI Navigator</a>
+    <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">💬</span>ChatGPT</a>
+    <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">✨</span>Gemini</a>
+    <a href="https://www.google.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">🔍</span>Google</a>
+    <a href="https://grok.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">🚀</span>Grok</a>
+</div>
+
+<div id="feed"></div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "./vendor/three/three.module.min.js",
+        "three/webgpu": "./vendor/three/three.webgpu.min.js"
+    }
+}
+</script>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
