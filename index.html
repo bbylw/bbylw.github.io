@@ -1,148 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#07080c">
-<meta name="description" content="Neural Chip X1 — interactive 3D teardown of the X1-C neural CPU and X1-A AI accelerator with live power/thermal/fan telemetry, cinematic bloom and real-time workloads.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23e8c47c'/%3E%3Cpath d='M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z' fill='%23161410'/%3E%3C/svg%3E">
-<title>Neural Chip X1 · AI Processor</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F0F13">
+  <meta name="description" content="bbylw (w404.nyc.mn) — Independent builder & open-source curator crafting modern web interfaces, agentic UI docs, and Chinese developer portals.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230F0F13'/%3E%3Crect x='5' y='8' width='3' height='16' fill='%23FF6B4A'/%3E%3Crect x='10' y='8' width='3' height='16' fill='%23E8458B'/%3E%3Crect x='15' y='8' width='3' height='16' fill='%23FFFFFF'/%3E%3Crect x='20' y='8' width='3' height='16' fill='%23A855F7'/%3E%3Crect x='25' y='8' width='3' height='16' fill='%233B66FF'/%3E%3C/svg%3E">
+  <title>BBYLW · w404.nyc.mn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
-<body>
+<body data-lang="en">
+  <header class="site-header" id="site-header">
+    <a href="#top" class="brand-mark" aria-label="BBYLW Home">
+      <span class="eq-bars eq-bars--warm" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      <span>BBYLW</span>
+      <span class="eq-bars eq-bars--cool" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+    </a>
 
-<div id="boot">
-    <div class="boot-card">
-        <div class="boot-head">
-            <div class="boot-logo">
-                <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
-            </div>
-            <div>
-                <div class="boot-title">Neural Chip X1</div>
-                <div class="boot-sub">Power-On Self Test</div>
-            </div>
-        </div>
-        <div id="boot-log"></div>
-        <div class="boot-progress">
-            <div class="boot-bar"><div class="boot-bar-fill" id="boot-bar-fill"></div></div>
-            <div class="boot-pct" id="boot-pct">0%</div>
-        </div>
+    <nav class="nav-capsule" aria-label="Primary">
+      <a class="nav-link" href="#works" data-i18n="nav.works">Works</a>
+      <a class="nav-link" href="#docs" data-i18n="nav.docs">Docs</a>
+      <a class="nav-link" href="#labs" data-i18n="nav.labs">Focus</a>
+      <a class="nav-link" href="#about" data-i18n="nav.about">About</a>
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" class="lang-btn" id="lang-toggle" aria-label="Switch language to Chinese">中</button>
+      <a class="header-cta" href="https://github.com/bbylw" target="_blank" rel="noopener noreferrer" data-i18n="nav.cta">GitHub</a>
     </div>
-</div>
+  </header>
 
-<div class="vignette"></div>
-<div id="scene"></div>
+  <main id="top">
+    <section class="hero" aria-label="Introduction">
+      <canvas id="stage-canvas" aria-hidden="true"></canvas>
 
-<div id="hover-tip">
-    <div class="tip-name" id="tip-name"></div>
-    <div class="tip-spec" id="tip-spec"></div>
-</div>
+      <div class="hero-content">
+        <h1 class="hero-headline" aria-live="polite">
+          <span class="headline-row headline-row--first">
+            <span class="eq-bars eq-bars--warm" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+            <span class="headline-line">BUILD THE</span>
+          </span>
+          <span class="headline-row">
+            <span class="headline-line">FUTURE IN</span>
+          </span>
+          <span class="headline-row headline-row--last">
+            <span class="headline-line">EVERY PULSE</span>
+            <span class="eq-bars eq-bars--cool" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          </span>
+        </h1>
 
-<!-- ================= header ================= -->
-<div class="header">
-    <div class="brand">
-        <div class="brand-mark">
-            <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+        <p class="hero-sub" id="hero-sub" data-i18n="hero.sub">
+          Independent builder &amp; open-source curator crafting modern web interfaces, agentic UI docs, and developer tools at w404.nyc.mn.
+        </p>
+
+        <div class="hero-ctas">
+          <a class="ghost-btn ghost-btn--primary" href="#works" id="cta-works" data-i18n="hero.ctaPrimary">Explore Works</a>
+          <a class="ghost-btn" href="#docs" id="cta-docs" data-i18n="hero.ctaSecondary">Docs Hub</a>
         </div>
+      </div>
+
+      <div class="hero-hud">
+        <div class="scene-switcher" role="group" aria-label="Visual scenes">
+          <button type="button" class="scene-dot is-active" data-scene="0" aria-pressed="true">01<span class="scene-dot-track"><span class="scene-dot-fill"></span></span></button>
+          <button type="button" class="scene-dot" data-scene="1" aria-pressed="false">02<span class="scene-dot-track"><span class="scene-dot-fill"></span></span></button>
+          <button type="button" class="scene-dot" data-scene="2" aria-pressed="false">03<span class="scene-dot-track"><span class="scene-dot-fill"></span></span></button>
+          <button type="button" class="scene-dot" data-scene="3" aria-pressed="false">04<span class="scene-dot-track"><span class="scene-dot-fill"></span></span></button>
+        </div>
+
+        <div class="hud-controls">
+          <button type="button" class="hud-icon-btn" id="pause-btn" aria-label="Pause motion" title="Pause / Resume motion">
+            <svg class="icon-pause" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <rect x="3" y="2" width="3.5" height="12"></rect>
+              <rect x="9.5" y="2" width="3.5" height="12"></rect>
+            </svg>
+            <svg class="icon-play" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <polygon points="4,2 14,8 4,14"></polygon>
+            </svg>
+          </button>
+
+          <button type="button" class="hud-icon-btn" id="audio-btn" aria-label="Enable ambient pulse" title="Toggle ambient audio pulse">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="2" y="6" width="1.5" height="4" fill="currentColor" stroke="none"></rect>
+              <rect x="5.5" y="3" width="1.5" height="10" fill="currentColor" stroke="none"></rect>
+              <rect x="9" y="5" width="1.5" height="6" fill="currentColor" stroke="none"></rect>
+              <rect x="12.5" y="2" width="1.5" height="12" fill="currentColor" stroke="none"></rect>
+            </svg>
+          </button>
+        </div>
+
+        <div class="hud-socials">
+          <a class="social-link" href="https://github.com/bbylw" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+            </svg>
+          </a>
+          <a class="social-link" href="https://w404.nyc.mn/wn/" target="_blank" rel="noopener noreferrer" aria-label="WebNav">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.2"></circle>
+              <path d="M2.3 8h11.4M8 1.8c1.8 1.8 2.7 3.9 2.7 6.2S9.8 12.4 8 14.2C6.2 12.4 5.3 10.3 5.3 8S6.2 3.6 8 1.8Z"></path>
+            </svg>
+          </a>
+          <a class="social-link" href="#docs" aria-label="Chinese Docs Network">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <path d="M3 2.5h7l3 3v8H3v-11Z"></path>
+              <path d="M10 2.5v3h3M5.5 8.5h5M5.5 11h3.5"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="works">
+      <div class="section-header">
         <div>
-            <div class="brand-name">Neural Chip X1</div>
-            <div class="brand-model" id="brand-model">X1-C · CPU Module</div>
+          <p class="section-eyebrow" data-i18n="works.eyebrow">Selected Repositories</p>
+          <h2 class="section-title" data-i18n="works.title">Open-source projects &amp; edge tools.</h2>
         </div>
-    </div>
+        <p class="section-lead" data-i18n="works.lead">
+          Curated repositories maintained under @bbylw — spanning deterministic video engines, Cloudflare KV utilities, and modern UI kits.
+        </p>
+      </div>
+      <div class="works-list" id="works-list"></div>
+    </section>
 
-    <div class="header-right">
-        <div class="status-pill">
-            <div class="status-dot" id="status-dot"></div>
-            <span id="status-text">POWER-ON</span>
+    <section class="section" id="docs">
+      <div class="section-header">
+        <div>
+          <p class="section-eyebrow" data-i18n="docs.eyebrow">Chinese Documentation Network</p>
+          <h2 class="section-title" data-i18n="docs.title">16 live portals for modern web &amp; AI stacks.</h2>
         </div>
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric-label">Compute</div>
-                <div class="metric-value accent" id="m-compute">0<span class="metric-unit">TOPS</span></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">Power</div>
-                <div class="metric-value" id="m-power">0<span class="metric-unit">W</span></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label" id="m-fan-label">Fan</div>
-                <div class="metric-value" id="m-fan">0<span class="metric-unit">%</span></div>
-            </div>
-            <div class="metric">
-                <div class="metric-label">Temp</div>
-                <div class="metric-value" id="m-temp">0<span class="metric-unit">°C</span></div>
-            </div>
+        <p class="section-lead" data-i18n="docs.lead">
+          Continuously synced Chinese documentation sites hosted across ndjp.net and w404.nyc.mn.
+        </p>
+      </div>
+
+      <div class="docs-toolbar">
+        <div class="docs-filters" id="docs-filters"></div>
+        <input
+          type="search"
+          class="docs-search"
+          id="docs-search"
+          placeholder="Filter portals (press / )"
+          aria-label="Filter documentation portals"
+        >
+      </div>
+
+      <div class="docs-grid" id="docs-list"></div>
+      <p class="docs-empty" id="docs-empty" data-i18n="docs.empty" hidden>No documentation portals matched your filter.</p>
+    </section>
+
+    <section class="section" id="labs">
+      <div class="section-header">
+        <div>
+          <p class="section-eyebrow" data-i18n="labs.eyebrow">Engineering Focus</p>
+          <h2 class="section-title" data-i18n="labs.title">Signal over noise.</h2>
         </div>
-    </div>
-</div>
+      </div>
+      <div class="pillars-grid" id="pillars-grid"></div>
+    </section>
 
-<!-- ================= info panel ================= -->
-<div class="info-panel">
-    <div class="group" style="padding:16px 18px;">
-        <div class="info-title" id="info-title">Neural Chip<br>X1-C · AI Processor</div>
-        <div class="info-subtitle" id="info-subtitle"></div>
-    </div>
-    <div class="group">
-        <div class="group-title">Specifications <span class="hint" id="spec-hint">X1-C</span></div>
-        <div id="spec-rows"></div>
-    </div>
-    <div class="group">
-        <div class="group-title">Live Telemetry</div>
-        <div class="workload-line">
-            <span class="wl-name" id="wl-name">—</span>
-            <span class="wl-pct" id="wl-pct">—</span>
+    <section class="section" id="about">
+      <div class="about-layout">
+        <div>
+          <p class="section-eyebrow" data-i18n="about.eyebrow">Profile · @bbylw</p>
+          <h2 class="section-title" data-i18n="about.title">Building at the intersection of web craft, Chinese developer docs, and AI interfaces.</h2>
+          <p class="about-bio" data-i18n="about.bio">
+            Active on GitHub since 2017 as "free" (@bbylw). Maintaining 445+ public repositories, 16+ live Chinese technical documentation portals, and lightweight edge deployments under w404.nyc.mn.
+          </p>
+          <div class="about-actions">
+            <a class="ghost-btn ghost-btn--primary" href="https://github.com/bbylw" target="_blank" rel="noopener noreferrer" data-i18n="about.githubBtn">View @bbylw on GitHub</a>
+            <a class="ghost-btn" href="https://w404.nyc.mn/wn/" target="_blank" rel="noopener noreferrer" data-i18n="about.wnBtn">Open WebNav</a>
+          </div>
         </div>
-        <div id="tele-rows"></div>
-        <div class="trends">
-            <div class="trend"><div class="trend-label">Power · trend</div><canvas id="spark-power" width="120" height="30"></canvas></div>
-            <div class="trend"><div class="trend-label">Temp · trend</div><canvas id="spark-temp" width="120" height="30"></canvas></div>
-        </div>
-    </div>
-</div>
+        <div class="about-stats" id="about-stats"></div>
+      </div>
+    </section>
+  </main>
 
-<!-- ================= control panel ================= -->
-<div class="control-panel">
-    <div class="group control-group">
-        <div class="control-group-title">Module</div>
-        <div class="seg" role="radiogroup" aria-label="Module">
-            <button class="control-btn active" id="btn-cpu" role="radio" aria-checked="true" title="Switch module · X1-C CPU  [1]"><span class="icon">⬢</span>X1-C CPU</button>
-            <button class="control-btn" id="btn-accel" role="radio" aria-checked="false" title="Switch module · X1-A AI accelerator  [2]"><span class="icon">▣</span>X1-A AI</button>
-        </div>
-    </div>
-    <div class="group control-group">
-        <div class="control-group-title">View</div>
-        <button class="control-btn active" id="btn-rotate" title="Toggle auto rotation  [A]"><span class="icon">↻</span>Auto Rotate</button>
-        <button class="control-btn" id="btn-explode" title="Explode / reassemble the layer stack  [X]"><span class="icon">⇕</span>Explode View</button>
-        <button class="control-btn" id="btn-wireframe" title="Toggle wireframe shading  [W]"><span class="icon">◇</span>Wireframe</button>
-        <button class="control-btn" id="btn-reset" title="Reset camera & view  [R]"><span class="icon">⟲</span>Reset View</button>
-    </div>
-    <div class="group control-group">
-        <div class="control-group-title">Runtime</div>
-        <button class="control-btn active" id="btn-data" title="Toggle data-flow particles  [D]"><span class="icon">◈</span>Data Flow</button>
-        <button class="control-btn danger" id="btn-stress" title="Engage / release full-load stress  [S]"><span class="icon">⚡</span>Stress Test</button>
-    </div>
-</div>
+  <footer class="site-footer">
+    <a href="#top" class="brand-mark">
+      <span class="eq-bars eq-bars--warm" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+      <span>BBYLW</span>
+      <span class="eq-bars eq-bars--cool" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+    </a>
+    <span data-i18n="footer.tagline">w404.nyc.mn · GitHub Pages</span>
+    <a href="#top" class="footer-top-link" data-i18n="footer.top">Back to top</a>
+  </footer>
 
-<!-- ================= bottom links ================= -->
-<div class="controls">
-    <a href="https://pornavp.onrender.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">🧭</span>AI Navigator</a>
-    <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">💬</span>ChatGPT</a>
-    <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">✨</span>Gemini</a>
-    <a href="https://www.google.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">🔍</span>Google</a>
-    <a href="https://grok.com/" target="_blank" rel="noopener noreferrer" class="nav-link"><span class="nav-icon">🚀</span>Grok</a>
-</div>
-
-<div id="feed"></div>
-
-<script type="importmap">
-{
-    "imports": {
-        "three": "./vendor/three/three.module.min.js",
-        "three/webgpu": "./vendor/three/three.webgpu.min.js"
-    }
-}
-</script>
-
-<script type="module" src="js/app.js"></script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
