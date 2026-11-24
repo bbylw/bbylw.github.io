@@ -28,7 +28,7 @@ export const SCENES = [
   {
     id: '03',
     image: './assets/scenes/scene-3.webp',
-    revealMode: 'bottom-up-soft',
+    revealMode: 'top-down-soft',
     lines: {
       en: ['OPEN DOCS', 'BUILT FOR', 'EVERY MIND'],
       zh: ['开源文档', '连接每一位', '中文开发者'],

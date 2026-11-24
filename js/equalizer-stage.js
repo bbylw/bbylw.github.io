@@ -468,7 +468,7 @@ export class EqualizerStage {
   }
 
   _computeRevealBand(mode, nx, col, phaseProgress) {
-    // Organic multi-sine frontier + per-column comb stagger exposing 58%-66% sharp sculptural detail
+    // Organic multi-sine frontier + per-column comb stagger; full faces reveal cleanly on Scenes 01, 03, 04
     const wave =
       Math.sin(nx * 8.5 + phaseProgress * 4.2) * 0.028 +
       Math.cos(nx * 16.0 - phaseProgress * 2.6) * 0.012;
@@ -479,19 +479,19 @@ export class EqualizerStage {
     const strength = smoothstep(0.11, 0.34, phaseProgress) * (1 - smoothstep(0.78, 0.95, phaseProgress));
 
     if (mode === 'top-down') {
-      const splitY = lerp(0.12, 0.62, strength) + wave + comb;
+      const splitY = lerp(0.10, 0.74, strength) + wave + comb;
       return { isBottomRevealed: false, splitY, strength };
     }
     if (mode === 'bottom-up') {
-      const splitY = lerp(0.94, 0.39, strength) + wave + comb;
+      const splitY = lerp(0.94, 0.44, strength) + wave + comb;
       return { isBottomRevealed: true, splitY, strength };
     }
-    if (mode === 'bottom-up-soft') {
-      const splitY = lerp(0.94, 0.42, strength) + wave * 1.1 + comb;
-      return { isBottomRevealed: true, splitY, strength };
+    if (mode === 'top-down-soft') {
+      const splitY = lerp(0.10, 0.69, strength) + (0.5 - nx) * 0.14 + wave * 1.05 + comb;
+      return { isBottomRevealed: false, splitY, strength };
     }
     // diagonal
-    const splitY = lerp(0.08, 0.58, strength) + (nx - 0.5) * 0.30 + wave + comb;
+    const splitY = lerp(0.08, 0.60, strength) + (nx - 0.5) * 0.24 + wave + comb;
     return { isBottomRevealed: false, splitY, strength };
   }
 
@@ -619,7 +619,7 @@ export class EqualizerStage {
         }
 
         const distFromSplit = band.isBottomRevealed ? band.splitY - nyMid : nyMid - band.splitY;
-        const frontierZone = smoothstep(-0.09, 0.05, distFromSplit);
+        const frontierZone = smoothstep(-0.035, 0.045, distFromSplit);
         const barVisibility = clamp(
           Math.max(1 - band.strength, frontierZone, pointerDisturb),
           0,
