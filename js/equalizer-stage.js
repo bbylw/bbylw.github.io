@@ -262,7 +262,7 @@ export class EqualizerStage {
   };
 
   _getStageRect() {
-    // Frame the sculpture gracefully inside the right side on desktop, below hero CTAs on mobile
+    // Frame the sculpture gracefully inside the centered editorial grid on desktop, below hero CTAs on mobile
     if (this.isMobile) {
       const stageW = Math.min(this.width * 0.84, 340);
       const stageH = stageW * (4 / 3);
@@ -274,10 +274,25 @@ export class EqualizerStage {
       };
     }
 
-    const stageH = Math.min(this.height * 0.90, 820);
-    const stageW = stageH * 0.75;
-    const x = Math.max(this.width * 0.43, this.width - stageW - Math.max(20, this.width * 0.035));
-    const y = Math.max(66, this.height - stageH * 0.96);
+    const containerW = Math.min(this.width, 1320);
+    const containerLeft = (this.width - containerW) * 0.5;
+    const padX = Math.min(64, Math.max(20, this.width * 0.045));
+    const innerW = containerW - padX * 2;
+
+    let stageH = Math.min(this.height * 0.94, 860);
+    let stageW = stageH * 0.75;
+    const maxStageW = innerW * 0.56;
+    if (stageW > maxStageW) {
+      stageW = maxStageW;
+      stageH = stageW / 0.75;
+    }
+
+    // Center the sculpture at ~69% of the editorial container so it pairs tightly with the left headline
+    const desiredCenterX = containerLeft + padX + innerW * 0.69;
+    const minX = containerLeft + padX + innerW * 0.40;
+    const maxX = containerLeft + containerW - padX - stageW * 0.92;
+    const x = clamp(desiredCenterX - stageW * 0.5, minX, maxX);
+    const y = Math.max(54, this.height - stageH * 0.95);
     return { x, y, w: stageW, h: stageH };
   }
 
@@ -458,18 +473,21 @@ export class EqualizerStage {
       }
     }
 
-    // 3. Soft left & bottom obsidian fade so headline text always sits on ultra-clean dark ground
-    const leftGrad = ctx.createLinearGradient(0, 0, rect.x + rect.w * 0.22, 0);
-    leftGrad.addColorStop(0, '#0F0F13');
-    leftGrad.addColorStop(0.68, 'rgba(15, 15, 19, 0.65)');
-    leftGrad.addColorStop(1, 'rgba(15, 15, 19, 0)');
-    ctx.fillStyle = leftGrad;
-    ctx.fillRect(0, 0, rect.x + rect.w * 0.22, height);
+    // 3. Soft left & bottom obsidian fade so headline text sits on clean ground without dimming sculpture bars
+    const leftFadeEnd = Math.max(0, rect.x + rect.w * 0.08);
+    if (leftFadeEnd > 0) {
+      const leftGrad = ctx.createLinearGradient(0, 0, leftFadeEnd, 0);
+      leftGrad.addColorStop(0, '#0F0F13');
+      leftGrad.addColorStop(0.75, 'rgba(15, 15, 19, 0.55)');
+      leftGrad.addColorStop(1, 'rgba(15, 15, 19, 0)');
+      ctx.fillStyle = leftGrad;
+      ctx.fillRect(0, 0, leftFadeEnd, height);
+    }
 
-    const bottomGrad = ctx.createLinearGradient(0, height - 110, 0, height);
+    const bottomGrad = ctx.createLinearGradient(0, height - 96, 0, height);
     bottomGrad.addColorStop(0, 'rgba(15, 15, 19, 0)');
     bottomGrad.addColorStop(1, '#0F0F13');
     ctx.fillStyle = bottomGrad;
-    ctx.fillRect(0, height - 110, width, 110);
+    ctx.fillRect(0, height - 96, width, 96);
   }
 }

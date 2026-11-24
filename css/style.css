@@ -96,13 +96,18 @@ button {
   left: 0;
   right: 0;
   z-index: 40;
+  transition: background-color 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.site-header-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
   padding: 20px var(--pad-x);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  transition: background-color 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease;
-  border-bottom: 1px solid transparent;
 }
 
 .site-header.is-scrolled {
@@ -203,7 +208,7 @@ button {
   overflow: hidden;
   display: flex;
   align-items: center;
-  padding: 108px var(--pad-x) 72px;
+  padding: 108px 0 72px;
 }
 
 #stage-canvas {
@@ -215,11 +220,18 @@ button {
   z-index: 1;
 }
 
-.hero-content {
+.hero-inner {
   position: relative;
   z-index: 5;
-  max-width: min(600px, 52vw);
-  margin-top: 8vh;
+  width: 100%;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
+
+.hero-content {
+  max-width: min(560px, 48%);
+  margin-top: 6vh;
 }
 
 .hero-headline {
@@ -298,10 +310,10 @@ body[data-lang='zh'] .hero-headline {
   color: #ffffff;
 }
 
-/* Bottom-right HUD matching io.mp4 minimalism */
+/* Bottom-right HUD aligned with the centered editorial container */
 .hero-hud {
   position: absolute;
-  right: var(--pad-x);
+  right: max(var(--pad-x), calc((100% - var(--max-w)) / 2 + var(--pad-x)));
   bottom: 26px;
   z-index: 10;
   display: flex;
@@ -797,7 +809,7 @@ body[data-lang='zh'] .hero-headline {
    ========================================================= */
 @media (max-width: 1024px) {
   .hero-content {
-    max-width: 58vw;
+    max-width: 56%;
   }
 
   .section-header,
