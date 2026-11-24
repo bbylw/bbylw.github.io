@@ -49,10 +49,10 @@ export class EqualizerStage {
     this.paused = false;
     this.visible = true;
 
-    this.sceneDuration = 5800; // ms per scene cycle
+    this.sceneDuration = 6600; // ms per scene cycle for richer figure appreciation
     this.currentIndex = 0;
     this.prevIndex = scenes.length - 1;
-    this.sceneElapsed = 1650; // start partially revealed on initial load for immediate impact
+    this.sceneElapsed = 1750; // start in rich sculptural reveal on initial load
     this.lastTimestamp = 0;
     this.rafId = null;
 
@@ -72,8 +72,8 @@ export class EqualizerStage {
     this.height = 0;
     this.isMobile = false;
 
-    this.gridCols = 86;
-    this.gridRows = 124;
+    this.gridCols = 96;
+    this.gridRows = 148;
 
     this.prepared = new Array(scenes.length).fill(null);
     this.ready = false;
@@ -154,8 +154,8 @@ export class EqualizerStage {
     this.canvas.height = Math.round(this.height * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    const nextCols = this.isMobile ? 52 : 84;
-    const nextRows = this.isMobile ? 84 : 124;
+    const nextCols = this.isMobile ? 58 : 96;
+    const nextRows = this.isMobile ? 92 : 148;
     if (nextCols !== this.gridCols || nextRows !== this.gridRows) {
       this.gridCols = nextCols;
       this.gridRows = nextRows;
@@ -191,7 +191,7 @@ export class EqualizerStage {
   }
 
   _createMattedMonochrome(img) {
-    const targetW = 540;
+    const targetW = 960;
     const targetH = Math.round((img.naturalHeight / img.naturalWidth) * targetW);
     const off = document.createElement('canvas');
     off.width = targetW;
@@ -201,49 +201,153 @@ export class EqualizerStage {
 
     const imageData = octx.getImageData(0, 0, targetW, targetH);
     const data = imageData.data;
+    const total = targetW * targetH;
 
-    // Sample corners and outer border to detect background floor luminance
+    // Sample outer perimeter to determine dark studio floor luminance
     const sampleCoords = [
       [4, 4], [targetW - 5, 4], [4, targetH - 5], [targetW - 5, targetH - 5],
       [Math.floor(targetW * 0.5), 4], [4, Math.floor(targetH * 0.5)],
       [targetW - 5, Math.floor(targetH * 0.5)],
+      [4, Math.floor(targetH * 0.25)], [targetW - 5, Math.floor(targetH * 0.25)],
     ];
     let bgSum = 0;
     for (const [sx, sy] of sampleCoords) {
       const idx = (sy * targetW + sx) * 4;
       bgSum += (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255;
     }
-    const bgLum = clamp(bgSum / sampleCoords.length, 0.03, 0.22);
+    const bgLum = clamp(bgSum / sampleCoords.length, 0.02, 0.20);
 
+    const rawLumBuf = new Float32Array(total);
+    const filmicBuf = new Float32Array(total);
+
+    for (let i = 0; i < total; i += 1) {
+      const p = i * 4;
+      const rawLum = (0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]) / 255;
+      rawLumBuf[i] = rawLum;
+
+      // Highlight-safe filmic S-curve preserving porcelain, titanium & marble micro-tonality
+      const t = clamp((rawLum - bgLum * 0.7) / Math.max(0.25, 1 - bgLum * 0.7), 0, 1);
+      filmicBuf[i] = t < 0.5
+        ? 0.5 * Math.pow(2 * t, 1.08)
+        : 1 - 0.5 * Math.pow(2 * (1 - t), 1.15);
+    }
+
+    // Connected-border BFS flood-fill over dark exterior pixels so dark interior crevices stay 100% solid
+    const exterior = new Uint8Array(total);
+    const queue = new Int32Array(total);
+    let head = 0;
+    let tail = 0;
+    const bgCutoff = bgLum + 0.075;
+
+    const trySeed = (idx) => {
+      if (!exterior[idx] && rawLumBuf[idx] <= bgCutoff + 0.015) {
+        exterior[idx] = 1;
+        queue[tail++] = idx;
+      }
+    };
+
+    for (let x = 0; x < targetW; x += 1) {
+      trySeed(x);
+      trySeed((targetH - 1) * targetW + x);
+    }
+    for (let y = 1; y < targetH - 1; y += 1) {
+      trySeed(y * targetW);
+      trySeed(y * targetW + (targetW - 1));
+    }
+
+    while (head < tail) {
+      const cur = queue[head++];
+      const cx = cur % targetW;
+      const cy = (cur - cx) / targetW;
+
+      if (cx > 0) {
+        const n = cur - 1;
+        if (!exterior[n] && rawLumBuf[n] <= bgCutoff) {
+          exterior[n] = 1;
+          queue[tail++] = n;
+        }
+      }
+      if (cx + 1 < targetW) {
+        const n = cur + 1;
+        if (!exterior[n] && rawLumBuf[n] <= bgCutoff) {
+          exterior[n] = 1;
+          queue[tail++] = n;
+        }
+      }
+      if (cy > 0) {
+        const n = cur - targetW;
+        if (!exterior[n] && rawLumBuf[n] <= bgCutoff) {
+          exterior[n] = 1;
+          queue[tail++] = n;
+        }
+      }
+      if (cy + 1 < targetH) {
+        const n = cur + targetW;
+        if (!exterior[n] && rawLumBuf[n] <= bgCutoff) {
+          exterior[n] = 1;
+          queue[tail++] = n;
+        }
+      }
+    }
+
+    // 2-pass silhouette alpha feathering purely along exterior boundary
+    let alphaA = new Float32Array(total);
+    let alphaB = new Float32Array(total);
+    for (let i = 0; i < total; i += 1) {
+      alphaA[i] = exterior[i] ? 0 : 1;
+    }
+
+    for (let pass = 0; pass < 2; pass += 1) {
+      for (let y = 1; y < targetH - 1; y += 1) {
+        const rowOffset = y * targetW;
+        for (let x = 1; x < targetW - 1; x += 1) {
+          const i = rowOffset + x;
+          const center = alphaA[i];
+          const nSum = alphaA[i - 1] + alphaA[i + 1] + alphaA[i - targetW] + alphaA[i + targetW];
+          // Keep solid interior pixels crisp; only feather pixels touching exterior
+          if (center === 1 && nSum === 4) {
+            alphaB[i] = 1;
+          } else if (center === 0 && nSum === 0) {
+            alphaB[i] = 0;
+          } else {
+            alphaB[i] = (center * 2 + nSum) / 6;
+          }
+        }
+      }
+      const tmp = alphaA;
+      alphaA = alphaB;
+      alphaB = tmp;
+    }
+
+    // Apply subtle 3x3 micro-contrast sharpen + feathered alpha + soft perimeter fade
     for (let y = 0; y < targetH; y += 1) {
       const ny = y / targetH;
-      const edgeTop = smoothstep(0.01, 0.10, ny);
-      const edgeBottom = 1 - smoothstep(0.84, 0.995, ny);
+      const edgeTop = smoothstep(0.005, 0.07, ny);
+      const edgeBottom = 1 - smoothstep(0.86, 0.996, ny);
+      const yUp = Math.max(0, y - 1) * targetW;
+      const yCur = y * targetW;
+      const yDn = Math.min(targetH - 1, y + 1) * targetW;
 
       for (let x = 0; x < targetW; x += 1) {
         const nx = x / targetW;
-        const idx = (y * targetW + x) * 4;
-        const r = data[idx];
-        const g = data[idx + 1];
-        const b = data[idx + 2];
+        const i = yCur + x;
+        const xL = Math.max(0, x - 1);
+        const xR = Math.min(targetW - 1, x + 1);
 
-        const rawLum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        // Studio high-contrast grayscale curve
-        const adjusted = clamp((rawLum - bgLum) / Math.max(0.25, 1 - bgLum), 0, 1);
-        const contrasted = clamp(Math.pow(adjusted, 0.92) * 1.08, 0, 1);
-        const gray = Math.round(contrasted * 255);
+        const center = filmicBuf[i];
+        const blur4 = (filmicBuf[yCur + xL] + filmicBuf[yCur + xR] + filmicBuf[yUp + x] + filmicBuf[yDn + x]) * 0.25;
+        const sharpened = clamp(center + 0.28 * (center - blur4), 0, 1);
+        const gray = Math.round(sharpened * 255);
 
-        const edgeLeft = smoothstep(0.02, 0.13, nx);
-        const edgeRight = 1 - smoothstep(0.88, 0.99, nx);
+        const edgeLeft = smoothstep(0.015, 0.10, nx);
+        const edgeRight = 1 - smoothstep(0.90, 0.992, nx);
         const edgeMask = edgeTop * edgeBottom * edgeLeft * edgeRight;
 
-        const keyAlpha = smoothstep(bgLum + 0.028, bgLum + 0.145, rawLum);
-        const alpha = Math.round(clamp(keyAlpha * edgeMask, 0, 1) * 255);
-
-        data[idx] = gray;
-        data[idx + 1] = gray;
-        data[idx + 2] = gray;
-        data[idx + 3] = alpha;
+        const p = i * 4;
+        data[p] = gray;
+        data[p + 1] = gray;
+        data[p + 2] = gray;
+        data[p + 3] = Math.round(clamp(alphaA[i] * edgeMask, 0, 1) * 255);
       }
     }
 
@@ -364,30 +468,30 @@ export class EqualizerStage {
   }
 
   _computeRevealBand(mode, nx, col, phaseProgress) {
-    // Organic multi-sine frontier + per-column comb stagger matching io.mp4's interlocking bars
+    // Organic multi-sine frontier + per-column comb stagger exposing 58%-66% sharp sculptural detail
     const wave =
-      Math.sin(nx * 8.5 + phaseProgress * 4.2) * 0.032 +
-      Math.cos(nx * 16.0 - phaseProgress * 2.6) * 0.014;
+      Math.sin(nx * 8.5 + phaseProgress * 4.2) * 0.028 +
+      Math.cos(nx * 16.0 - phaseProgress * 2.6) * 0.012;
     const comb =
-      Math.sin(col * 1.85 + phaseProgress * 3.2) * 0.036 +
-      Math.cos(col * 3.7) * 0.016;
+      Math.sin(col * 1.85 + phaseProgress * 3.2) * 0.032 +
+      Math.cos(col * 3.7) * 0.014;
 
-    const strength = smoothstep(0.14, 0.42, phaseProgress) * (1 - smoothstep(0.76, 0.95, phaseProgress));
+    const strength = smoothstep(0.11, 0.34, phaseProgress) * (1 - smoothstep(0.78, 0.95, phaseProgress));
 
     if (mode === 'top-down') {
-      const splitY = lerp(0.15, 0.45, strength) + wave + comb;
+      const splitY = lerp(0.12, 0.62, strength) + wave + comb;
       return { isBottomRevealed: false, splitY, strength };
     }
     if (mode === 'bottom-up') {
-      const splitY = lerp(0.92, 0.56, strength) + wave + comb;
+      const splitY = lerp(0.94, 0.39, strength) + wave + comb;
       return { isBottomRevealed: true, splitY, strength };
     }
     if (mode === 'bottom-up-soft') {
-      const splitY = lerp(0.92, 0.50, strength) + wave * 1.15 + comb;
+      const splitY = lerp(0.94, 0.42, strength) + wave * 1.1 + comb;
       return { isBottomRevealed: true, splitY, strength };
     }
     // diagonal
-    const splitY = lerp(0.06, 0.44, strength) + (nx - 0.5) * 0.34 + wave + comb;
+    const splitY = lerp(0.08, 0.58, strength) + (nx - 0.5) * 0.30 + wave + comb;
     return { isBottomRevealed: false, splitY, strength };
   }
 
@@ -404,18 +508,18 @@ export class EqualizerStage {
     const phase = this.reducedMotion ? 0.55 : this.getProgress();
     const audioEnergy = this.ambientAudio ? this.ambientAudio.sample() : 0;
 
-    // Cross-morph factor from previous scene to current scene during first 22% of cycle
-    const morphT = this.reducedMotion ? 1 : smoothstep(0.0, 0.22, phase);
+    // Cross-morph factor from previous scene to current scene during first 20% of cycle
+    const morphT = this.reducedMotion ? 1 : smoothstep(0.0, 0.20, phase);
 
     const cols = this.gridCols;
     const rows = this.gridRows;
     const colStep = rect.w / cols;
     const rowStep = rect.h / rows;
-    const barW = Math.max(2.2, colStep * 0.50);
+    const barW = Math.max(2.0, colStep * 0.52);
 
     const mode = this.scenes[this.currentIndex].revealMode;
 
-    // 1. Draw crisp monochrome sculpture inside a single unified comb-staggered clip region
+    // 1. Draw high-resolution monochrome sculpture inside a single unified comb-staggered clip region
     let avgRevealStrength = 0;
     for (let c = 0; c < cols; c += 1) {
       const nx = (c + 0.5) / cols;
@@ -425,7 +529,7 @@ export class EqualizerStage {
 
     if (avgRevealStrength > 0.02) {
       ctx.save();
-      ctx.globalAlpha = clamp(avgRevealStrength * 1.18, 0, 1);
+      ctx.globalAlpha = clamp(avgRevealStrength * 1.2, 0, 1);
       ctx.beginPath();
       for (let c = 0; c < cols; c += 1) {
         const nx = (c + 0.5) / cols;
@@ -449,10 +553,10 @@ export class EqualizerStage {
       ctx.restore();
     }
 
-    // 2. Column-walked elongated vertical equalizer rods
+    // 2. Contour-aware vertical equalizer rods
     const currGrid = curr.grid;
     const prevGrid = prev.grid;
-    const gapPx = Math.max(2.6, rowStep * 0.65);
+    const gapPx = Math.max(2.2, rowStep * 0.62);
 
     for (let c = 0; c < cols; c += 1) {
       const nx = (c + 0.5) / cols;
@@ -466,20 +570,24 @@ export class EqualizerStage {
         ? 0
         : (1 - band.strength) * colDir * Math.sin(timeSec * 2.1 + c * 0.45) * 14;
 
-      // Stagger vertical segment grid per column so breaks never form horizontal stripes
       let r = -Math.floor(colHash * 5);
 
       while (r < rows) {
-        const rMid = clamp(Math.floor(r + 2), 0, rows - 1);
-        const midIdx = rMid * cols + c;
-        const midLum = lerp(prevGrid[midIdx] || 0, currGrid[midIdx] || 0, morphT);
+        const rSample = clamp(Math.floor(r + 1), 0, rows - 2);
+        const idxA = rSample * cols + c;
+        const idxB = (rSample + 1) * cols + c;
+        const lumA = lerp(prevGrid[idxA] || 0, currGrid[idxA] || 0, morphT);
+        const lumB = lerp(prevGrid[idxB] || 0, currGrid[idxB] || 0, morphT);
+        const localGrad = Math.abs(lumA - lumB);
 
-        // Brighter areas produce longer continuous vertical rods; edges produce crisp shorter bars
-        const baseLen = 3 + ((c * 7 + r * 3 + 17) & 3) + Math.round(midLum * 3);
-        const segLen = clamp(baseLen, 3, 8);
+        // High-detail facial/mechanical ridges use tighter shorter rods (2-4 rows); smooth areas use longer rods (4-7 rows)
+        const baseLen = localGrad > 0.14
+          ? 2 + ((c * 5 + r * 3) & 1)
+          : 3 + ((c * 7 + r * 3 + 17) & 3) + Math.round(lumA * 2);
+        const segLen = clamp(baseLen, 2, 7);
         const rStart = Math.max(0, r);
         const rEnd = Math.min(rows, r + segLen);
-        r += segLen + 1; // 1-row dark break between elongated rods
+        r += segLen + 1;
 
         if (rEnd <= rStart) continue;
 
@@ -495,14 +603,13 @@ export class EqualizerStage {
 
         const transitionPulse = (1 - band.strength) * 0.16;
         const lum = clamp(((sumLum / count) * 0.65 + peakLum * 0.35) * (1 + audioBoost + transitionPulse), 0, 1);
-        if (lum < 0.068) continue;
+        if (lum < 0.065) continue;
 
         const nyMid = ((rStart + rEnd) * 0.5) / rows;
         const segTopY = rect.y + rStart * rowStep;
         const segMidY = rect.y + nyMid * rect.h;
-        const segH = Math.max(3, (rEnd - rStart) * rowStep - gapPx);
+        const segH = Math.max(2.5, (rEnd - rStart) * rowStep - gapPx);
 
-        // Spring-damped pointer wake locally fractures revealed sculpture into dancing rods
         let pointerDisturb = 0;
         if (this.pointer.strength > 0.02) {
           const dist = Math.hypot(colX - this.pointer.x, segMidY - this.pointer.y);
@@ -512,7 +619,7 @@ export class EqualizerStage {
         }
 
         const distFromSplit = band.isBottomRevealed ? band.splitY - nyMid : nyMid - band.splitY;
-        const frontierZone = smoothstep(-0.10, 0.055, distFromSplit);
+        const frontierZone = smoothstep(-0.09, 0.05, distFromSplit);
         const barVisibility = clamp(
           Math.max(1 - band.strength, frontierZone, pointerDisturb),
           0,
@@ -521,7 +628,6 @@ export class EqualizerStage {
 
         if (barVisibility <= 0.04) continue;
 
-        // Color assignment: white luminous core + warm left/lower flank + cool right/upper flank
         const edgeFactor = clamp(
           (1 - smoothstep(0.32, 0.72, lum)) * 0.85 +
           Math.abs(nx - 0.48) * 1.15 +
@@ -551,7 +657,7 @@ export class EqualizerStage {
       }
     }
 
-    // 3. Soft left & bottom obsidian fade so headline text sits on clean ground without dimming sculpture bars
+    // 3. Soft left & bottom obsidian fade so headline text sits on clean ground without dimming sculpture
     const leftFadeEnd = Math.max(0, rect.x + rect.w * 0.08);
     if (leftFadeEnd > 0) {
       const leftGrad = ctx.createLinearGradient(0, 0, leftFadeEnd, 0);

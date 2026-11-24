@@ -1,7 +1,7 @@
 export const SCENES = [
   {
     id: '01',
-    image: './assets/scenes/scene-1.png',
+    image: './assets/scenes/scene-1.webp',
     revealMode: 'top-down',
     lines: {
       en: ['BUILD THE', 'FUTURE IN', 'EVERY PULSE'],
@@ -14,7 +14,7 @@ export const SCENES = [
   },
   {
     id: '02',
-    image: './assets/scenes/scene-2.png',
+    image: './assets/scenes/scene-2.webp',
     revealMode: 'bottom-up',
     lines: {
       en: ['BEFORE CODE', 'THERE WAS', 'RHYTHM'],
@@ -27,7 +27,7 @@ export const SCENES = [
   },
   {
     id: '03',
-    image: './assets/scenes/scene-3.png',
+    image: './assets/scenes/scene-3.webp',
     revealMode: 'bottom-up-soft',
     lines: {
       en: ['OPEN DOCS', 'BUILT FOR', 'EVERY MIND'],
@@ -40,7 +40,7 @@ export const SCENES = [
   },
   {
     id: '04',
-    image: './assets/scenes/scene-4.png',
+    image: './assets/scenes/scene-4.webp',
     revealMode: 'diagonal',
     lines: {
       en: ['WHERE WEB', 'TURNS INTO', 'HARMONY'],
