@@ -9,15 +9,18 @@ const state = {
   searchQuery: '',
   paused: false,
   currentScene: 0,
+  heroInView: true,
 };
+
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const els = {
   header: document.getElementById('site-header'),
+  hero: document.querySelector('.hero'),
   headlineLines: document.querySelectorAll('.headline-line'),
-  heroSub: document.getElementById('hero-sub'),
-  ctaWorks: document.getElementById('cta-works'),
-  ctaDocs: document.getElementById('cta-docs'),
-  navLinks: document.querySelectorAll('[data-i18n]'),
+  headlineBars: document.querySelectorAll('.hero-headline .eq-bars span'),
+  navLinks: document.querySelectorAll('.nav-capsule .nav-link'),
+  i18nNodes: document.querySelectorAll('[data-i18n]'),
   langToggle: document.getElementById('lang-toggle'),
   sceneDots: document.querySelectorAll('.scene-dot'),
   sceneProgress: document.querySelectorAll('.scene-dot-fill'),
@@ -26,7 +29,10 @@ const els = {
   worksList: document.getElementById('works-list'),
   docsList: document.getElementById('docs-list'),
   docsFilters: document.getElementById('docs-filters'),
+  docsCount: document.getElementById('docs-count'),
+  searchBox: document.querySelector('.search-box'),
   docsSearch: document.getElementById('docs-search'),
+  searchClear: document.getElementById('search-clear'),
   docsEmpty: document.getElementById('docs-empty'),
   pillarsGrid: document.getElementById('pillars-grid'),
   aboutStats: document.getElementById('about-stats'),
@@ -48,6 +54,23 @@ const stage = new EqualizerStage(els.stageCanvas, SCENES, {
       scrambler.animateTo(lines, { duration: 900, lang: state.lang });
     }
   },
+  onFrame: ({ progress, energy, transitionIntensity, timeSec }) => {
+    els.sceneProgress.forEach((bar, idx) => {
+      bar.style.transform = idx === state.currentScene ? `scaleX(${progress.toFixed(3)})` : 'scaleX(0)';
+    });
+
+    if (reducedMotion) return;
+
+    const activity = Math.max(transitionIntensity * 0.55, energy * 1.4);
+    els.headlineBars.forEach((bar, idx) => {
+      if (activity <= 0.03) {
+        bar.style.transform = 'scaleY(1)';
+      } else {
+        const wave = 0.72 + Math.abs(Math.sin(timeSec * 6.4 + idx * 0.9)) * 0.52 * Math.min(1, activity);
+        bar.style.transform = `scaleY(${wave.toFixed(3)})`;
+      }
+    });
+  },
 });
 
 function getNestedI18n(obj, path) {
@@ -62,12 +85,18 @@ function updateSceneHUD(activeIndex) {
   });
 }
 
+function updateSearchUI() {
+  const hasVal = state.searchQuery.length > 0;
+  els.searchBox.classList.toggle('has-value', hasVal);
+  els.searchClear.hidden = !hasVal;
+}
+
 function renderI18n() {
   const dict = I18N[state.lang];
   document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : 'en';
   document.body.dataset.lang = state.lang;
 
-  els.navLinks.forEach((node) => {
+  els.i18nNodes.forEach((node) => {
     const key = node.dataset.i18n;
     const val = getNestedI18n(dict, key);
     if (typeof val === 'string') {
@@ -91,7 +120,6 @@ function renderI18n() {
     ambientAudio.isActive() ? dict.hero.audioOn : dict.hero.audioOff
   );
 
-  // Update active headline smoothly on language change
   const lines = SCENES[state.currentScene].lines[state.lang];
   scrambler.animateTo(lines, { duration: 700, lang: state.lang });
 
@@ -161,6 +189,8 @@ function renderDocs() {
     return hay.includes(q);
   });
 
+  els.docsCount.textContent = `${filtered.length} / ${DOCS_ECOSYSTEM.length}`;
+
   if (filtered.length === 0) {
     els.docsList.innerHTML = '';
     els.docsEmpty.hidden = false;
@@ -176,7 +206,10 @@ function renderDocs() {
     <a class="doc-item" href="${doc.url}" target="_blank" rel="noopener noreferrer">
       <div class="doc-top">
         <span class="doc-name">${doc.name}</span>
-        <span class="doc-cat">${catLabels[doc.category] || doc.category}</span>
+        <span class="doc-top-right">
+          <span class="doc-cat">${catLabels[doc.category] || doc.category}</span>
+          <span class="doc-arrow" aria-hidden="true">&#8599;</span>
+        </span>
       </div>
       <div class="doc-domain">${doc.domain}</div>
       <p class="doc-desc">${doc.description[state.lang]}</p>
@@ -212,11 +245,58 @@ function renderAboutStats() {
     .join('');
 }
 
+function setActiveNav(id) {
+  els.navLinks.forEach((link) => {
+    const match = link.getAttribute('href') === `#${id}`;
+    link.classList.toggle('is-active', match);
+  });
+}
+
+function initObservers() {
+  if (!('IntersectionObserver' in window)) return;
+
+  const heroObserver = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      state.heroInView = entry.isIntersecting;
+      stage.setVisible(entry.isIntersecting);
+      if (entry.isIntersecting && window.scrollY < 260) {
+        setActiveNav('');
+      }
+    },
+    { threshold: 0.05 }
+  );
+  heroObserver.observe(els.hero);
+
+  const sectionObserver = new IntersectionObserver(
+    (entries) => {
+      if (window.scrollY < 260) {
+        setActiveNav('');
+        return;
+      }
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveNav(entry.target.id);
+        }
+      });
+    },
+    { rootMargin: '-35% 0px -55% 0px', threshold: 0 }
+  );
+
+  ['works', 'docs', 'labs', 'about'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) sectionObserver.observe(el);
+  });
+}
+
 function bindUIEvents() {
   window.addEventListener(
     'scroll',
     () => {
       els.header.classList.toggle('is-scrolled', window.scrollY > 28);
+      if (window.scrollY < 260) {
+        setActiveNav('');
+      }
     },
     { passive: true }
   );
@@ -256,31 +336,52 @@ function bindUIEvents() {
 
   els.docsSearch.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
+    updateSearchUI();
     renderDocs();
   });
 
-  window.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement !== els.docsSearch) {
-      const targetTag = document.activeElement?.tagName;
-      if (targetTag !== 'INPUT' && targetTag !== 'TEXTAREA') {
-        e.preventDefault();
-        els.docsSearch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => els.docsSearch.focus(), 220);
-      }
-    }
+  els.searchClear.addEventListener('click', () => {
+    state.searchQuery = '';
+    els.docsSearch.value = '';
+    updateSearchUI();
+    renderDocs();
+    els.docsSearch.focus();
   });
 
-  // Update active scene underline fill smoothly
-  const updateProgressBar = () => {
-    const p = stage.getProgress();
-    els.sceneProgress.forEach((bar, idx) => {
-      bar.style.transform = idx === state.currentScene ? `scaleX(${p.toFixed(3)})` : 'scaleX(0)';
-    });
-    requestAnimationFrame(updateProgressBar);
-  };
-  requestAnimationFrame(updateProgressBar);
+  window.addEventListener('keydown', (e) => {
+    const activeEl = document.activeElement;
+    const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+    if (e.key === 'Escape' && activeEl === els.docsSearch) {
+      if (state.searchQuery) {
+        state.searchQuery = '';
+        els.docsSearch.value = '';
+        updateSearchUI();
+        renderDocs();
+      } else {
+        els.docsSearch.blur();
+      }
+      return;
+    }
+
+    if (isEditing) return;
+
+    if (e.key === '/') {
+      e.preventDefault();
+      els.docsSearch.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+      setTimeout(() => els.docsSearch.focus(), reducedMotion ? 0 : 220);
+      return;
+    }
+
+    if (state.heroInView && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+      const delta = e.key === 'ArrowRight' ? 1 : -1;
+      stage.goToScene(state.currentScene + delta);
+    }
+  });
 }
 
 renderI18n();
+updateSearchUI();
 bindUIEvents();
+initObservers();
 stage.init();

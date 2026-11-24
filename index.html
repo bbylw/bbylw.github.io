@@ -143,13 +143,20 @@
 
       <div class="docs-toolbar">
         <div class="docs-filters" id="docs-filters"></div>
-        <input
-          type="search"
-          class="docs-search"
-          id="docs-search"
-          placeholder="Filter portals (press / )"
-          aria-label="Filter documentation portals"
-        >
+        <div class="docs-search-wrap">
+          <span class="docs-count" id="docs-count" aria-live="polite">16 / 16</span>
+          <div class="search-box">
+            <input
+              type="search"
+              class="docs-search"
+              id="docs-search"
+              placeholder="Filter portals..."
+              aria-label="Filter documentation portals"
+            >
+            <kbd class="search-kbd" id="search-kbd" aria-hidden="true">/</kbd>
+            <button type="button" class="search-clear" id="search-clear" aria-label="Clear filter" hidden>&times;</button>
+          </div>
+        </div>
       </div>
 
       <div class="docs-grid" id="docs-list"></div>

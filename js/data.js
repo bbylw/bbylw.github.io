@@ -356,7 +356,7 @@ export const I18N = {
       eyebrow: 'Chinese Documentation Network',
       title: '16 live portals for modern web & AI stacks.',
       lead: 'Continuously synced Chinese documentation sites hosted across ndjp.net and w404.nyc.mn.',
-      searchPlaceholder: 'Filter portals (press / )',
+      searchPlaceholder: 'Filter portals...',
       empty: 'No documentation portals matched your filter.',
       filters: {
         all: 'All (16)',
@@ -416,7 +416,7 @@ export const I18N = {
       eyebrow: '中文文档镜像矩阵',
       title: '16 个持续同步的现代 Web 与 AI 文档站。',
       lead: '部署于 ndjp.net 与 w404.nyc.mn 的精选技术文档中文站，助力一线开发者高效检索与实践。',
-      searchPlaceholder: '搜索文档站（按 / 聚焦）',
+      searchPlaceholder: '搜索文档站...',
       empty: '没有找到匹配的文档站点。',
       filters: {
         all: '全部 (16)',

@@ -37,15 +37,17 @@ function samplePalette(stops, t) {
 }
 
 export class EqualizerStage {
-  constructor(canvas, scenes, { onSceneChange, ambientAudio } = {}) {
+  constructor(canvas, scenes, { onSceneChange, onFrame, ambientAudio } = {}) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d', { alpha: false });
     this.scenes = scenes;
     this.onSceneChange = onSceneChange || (() => {});
+    this.onFrame = onFrame || (() => {});
     this.ambientAudio = ambientAudio || null;
 
     this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.paused = false;
+    this.visible = true;
 
     this.sceneDuration = 5800; // ms per scene cycle
     this.currentIndex = 0;
@@ -54,7 +56,16 @@ export class EqualizerStage {
     this.lastTimestamp = 0;
     this.rafId = null;
 
-    this.pointer = { x: -9999, y: -9999, active: false, strength: 0 };
+    this.pointer = {
+      x: -9999,
+      y: -9999,
+      targetX: -9999,
+      targetY: -9999,
+      vx: 0,
+      vy: 0,
+      active: false,
+      strength: 0,
+    };
 
     this.dpr = 1;
     this.width = 0;
@@ -75,23 +86,61 @@ export class EqualizerStage {
     await this._loadAllScenes();
     this.ready = true;
     this.onSceneChange(this.currentIndex, true);
-    this.lastTimestamp = performance.now();
-    this._loop(this.lastTimestamp);
+    this._startLoop();
   }
 
   _bindEvents() {
     window.addEventListener('resize', () => this.resize());
 
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this._stopLoop();
+      } else if (this.ready && this.visible) {
+        this._startLoop();
+      }
+    });
+
     this.canvas.addEventListener('pointermove', (e) => {
       const rect = this.canvas.getBoundingClientRect();
-      this.pointer.x = e.clientX - rect.left;
-      this.pointer.y = e.clientY - rect.top;
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      if (!this.pointer.active && this.pointer.strength < 0.05) {
+        this.pointer.x = px;
+        this.pointer.y = py;
+        this.pointer.vx = 0;
+        this.pointer.vy = 0;
+      }
+      this.pointer.targetX = px;
+      this.pointer.targetY = py;
       this.pointer.active = true;
     });
 
     this.canvas.addEventListener('pointerleave', () => {
       this.pointer.active = false;
     });
+  }
+
+  setVisible(isVisible) {
+    this.visible = Boolean(isVisible);
+    if (!this.ready) return;
+    if (this.visible && !document.hidden) {
+      this._startLoop();
+    } else {
+      this._stopLoop();
+    }
+  }
+
+  _startLoop() {
+    if (this.rafId !== null) return;
+    this.lastTimestamp = performance.now();
+    this.rafId = requestAnimationFrame(this._loop);
+  }
+
+  _stopLoop() {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   resize() {
@@ -105,8 +154,8 @@ export class EqualizerStage {
     this.canvas.height = Math.round(this.height * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    const nextCols = this.isMobile ? 54 : 88;
-    const nextRows = this.isMobile ? 84 : 126;
+    const nextCols = this.isMobile ? 52 : 84;
+    const nextRows = this.isMobile ? 84 : 124;
     if (nextCols !== this.gridCols || nextRows !== this.gridRows) {
       this.gridCols = nextCols;
       this.gridRows = nextRows;
@@ -241,8 +290,9 @@ export class EqualizerStage {
   }
 
   _loop = (now) => {
-    const dt = Math.min(64, Math.max(0, now - this.lastTimestamp));
+    const dt = Math.min(50, Math.max(0, now - this.lastTimestamp));
     this.lastTimestamp = now;
+    const dtSec = dt * 0.001;
 
     if (!this.paused && !this.reducedMotion) {
       this.sceneElapsed += dt;
@@ -254,21 +304,38 @@ export class EqualizerStage {
       }
     }
 
+    // Spring-damped pointer wake tracking
+    if (this.pointer.active) {
+      const stiffness = 190;
+      const damping = 22;
+      const ax = (this.pointer.targetX - this.pointer.x) * stiffness - this.pointer.vx * damping;
+      const ay = (this.pointer.targetY - this.pointer.y) * stiffness - this.pointer.vy * damping;
+      this.pointer.vx += ax * dtSec;
+      this.pointer.vy += ay * dtSec;
+      this.pointer.x += this.pointer.vx * dtSec;
+      this.pointer.y += this.pointer.vy * dtSec;
+    }
+
     const targetPointerStrength = this.pointer.active ? 1 : 0;
-    this.pointer.strength = lerp(this.pointer.strength, targetPointerStrength, 0.14);
+    this.pointer.strength = lerp(this.pointer.strength, targetPointerStrength, 1 - Math.exp(-dtSec * 10));
 
     this._render(now * 0.001);
-    this.rafId = requestAnimationFrame(this._loop);
+
+    if (this.visible && !document.hidden) {
+      this.rafId = requestAnimationFrame(this._loop);
+    } else {
+      this.rafId = null;
+    }
   };
 
   _getStageRect() {
-    // Frame the sculpture gracefully inside the centered editorial grid on desktop, below hero CTAs on mobile
+    // Fit cleanly inside single mobile screen between CTA buttons and bottom HUD
     if (this.isMobile) {
-      const stageW = Math.min(this.width * 0.84, 340);
+      const stageW = Math.min(this.width * 0.76, 296);
       const stageH = stageW * (4 / 3);
       return {
         x: (this.width - stageW) * 0.5,
-        y: Math.max(390, this.height - stageH - 52),
+        y: Math.max(368, this.height - stageH - 58),
         w: stageW,
         h: stageH,
       };
@@ -296,31 +363,31 @@ export class EqualizerStage {
     return { x, y, w: stageW, h: stageH };
   }
 
-  _computeRevealBand(mode, nx, phaseProgress) {
-    // Returns normalized y threshold where crisp sculpture transitions to bars
-    // For top-down: y < split is crisp sculpture, y > split is equalizer bars
-    // For bottom-up / bottom-up-soft: y > split is crisp sculpture, y < split is equalizer bars
-    // For diagonal: tilted boundary
+  _computeRevealBand(mode, nx, col, phaseProgress) {
+    // Organic multi-sine frontier + per-column comb stagger matching io.mp4's interlocking bars
     const wave =
-      Math.sin(nx * 9.0 + phaseProgress * 4.2) * 0.032 +
-      Math.cos(nx * 17.0 - phaseProgress * 2.6) * 0.016;
+      Math.sin(nx * 8.5 + phaseProgress * 4.2) * 0.032 +
+      Math.cos(nx * 16.0 - phaseProgress * 2.6) * 0.014;
+    const comb =
+      Math.sin(col * 1.85 + phaseProgress * 3.2) * 0.036 +
+      Math.cos(col * 3.7) * 0.016;
 
     const strength = smoothstep(0.14, 0.42, phaseProgress) * (1 - smoothstep(0.76, 0.95, phaseProgress));
 
     if (mode === 'top-down') {
-      const splitY = lerp(0.16, 0.46, strength) + wave;
+      const splitY = lerp(0.15, 0.45, strength) + wave + comb;
       return { isBottomRevealed: false, splitY, strength };
     }
     if (mode === 'bottom-up') {
-      const splitY = lerp(0.92, 0.56, strength) + wave;
+      const splitY = lerp(0.92, 0.56, strength) + wave + comb;
       return { isBottomRevealed: true, splitY, strength };
     }
     if (mode === 'bottom-up-soft') {
-      const splitY = lerp(0.92, 0.50, strength) + wave * 1.2;
+      const splitY = lerp(0.92, 0.50, strength) + wave * 1.15 + comb;
       return { isBottomRevealed: true, splitY, strength };
     }
     // diagonal
-    const splitY = lerp(0.06, 0.44, strength) + (nx - 0.5) * 0.34 + wave;
+    const splitY = lerp(0.06, 0.44, strength) + (nx - 0.5) * 0.34 + wave + comb;
     return { isBottomRevealed: false, splitY, strength };
   }
 
@@ -337,22 +404,22 @@ export class EqualizerStage {
     const phase = this.reducedMotion ? 0.55 : this.getProgress();
     const audioEnergy = this.ambientAudio ? this.ambientAudio.sample() : 0;
 
-    // Cross-morph factor from previous scene to current scene during first 20% of cycle
+    // Cross-morph factor from previous scene to current scene during first 22% of cycle
     const morphT = this.reducedMotion ? 1 : smoothstep(0.0, 0.22, phase);
 
     const cols = this.gridCols;
     const rows = this.gridRows;
     const colStep = rect.w / cols;
     const rowStep = rect.h / rows;
-    const barW = Math.max(2.1, colStep * 0.48);
+    const barW = Math.max(2.2, colStep * 0.50);
 
     const mode = this.scenes[this.currentIndex].revealMode;
 
-    // 1. Draw crisp monochrome sculpture inside a single unified clip region (zero slice seams)
+    // 1. Draw crisp monochrome sculpture inside a single unified comb-staggered clip region
     let avgRevealStrength = 0;
     for (let c = 0; c < cols; c += 1) {
       const nx = (c + 0.5) / cols;
-      avgRevealStrength += this._computeRevealBand(mode, nx, phase).strength;
+      avgRevealStrength += this._computeRevealBand(mode, nx, c, phase).strength;
     }
     avgRevealStrength /= cols;
 
@@ -362,7 +429,7 @@ export class EqualizerStage {
       ctx.beginPath();
       for (let c = 0; c < cols; c += 1) {
         const nx = (c + 0.5) / cols;
-        const band = this._computeRevealBand(mode, nx, phase);
+        const band = this._computeRevealBand(mode, nx, c, phase);
         const splitPxY = rect.y + clamp(band.splitY, 0, 1) * rect.h;
         const colX = rect.x + c * colStep;
         if (band.isBottomRevealed) {
@@ -382,51 +449,70 @@ export class EqualizerStage {
       ctx.restore();
     }
 
-    // 2. Render vertical equalizer bars over unrevealed / frontier / pointer-disturbed zones
+    // 2. Column-walked elongated vertical equalizer rods
     const currGrid = curr.grid;
     const prevGrid = prev.grid;
+    const gapPx = Math.max(2.6, rowStep * 0.65);
 
     for (let c = 0; c < cols; c += 1) {
       const nx = (c + 0.5) / cols;
       const colX = rect.x + c * colStep + (colStep - barW) * 0.5;
-      const band = this._computeRevealBand(mode, nx, phase);
+      const band = this._computeRevealBand(mode, nx, c, phase);
       const audioBoost = this.ambientAudio ? this.ambientAudio.getColumnBoost(nx) : 0;
 
-      // Column-specific vertical cascade wave
-      const colSpeed = (c % 2 === 0 ? 1 : -0.75) * (0.9 + (c % 5) * 0.14);
-      const cascadeShift = Math.sin(timeSec * 2.1 + c * 0.37) * 0.8 + timeSec * colSpeed * 0.85;
-      const rowPhase = (c * 0.618) % 1;
+      const colDir = c % 2 === 0 ? 1 : -1;
+      const colHash = ((c * 37 + 13) % 13) / 13;
+      const cascadePx = this.reducedMotion
+        ? 0
+        : (1 - band.strength) * colDir * Math.sin(timeSec * 2.1 + c * 0.45) * 14;
 
-      for (let r = 0; r < rows; r += 1) {
-        const ny = (r + 0.5) / rows;
-        const idx = r * cols + c;
+      // Stagger vertical segment grid per column so breaks never form horizontal stripes
+      let r = -Math.floor(colHash * 5);
 
-        const lumPrev = prevGrid[idx] || 0;
-        const lumCurr = currGrid[idx] || 0;
-        let lum = lerp(lumPrev, lumCurr, morphT);
+      while (r < rows) {
+        const rMid = clamp(Math.floor(r + 2), 0, rows - 1);
+        const midIdx = rMid * cols + c;
+        const midLum = lerp(prevGrid[midIdx] || 0, currGrid[midIdx] || 0, morphT);
 
-        // During heavy transition, keep gentle vertical motion shimmer
-        const transitionPulse = (1 - band.strength) * 0.18;
-        lum = clamp(lum * (1 + audioBoost + transitionPulse), 0, 1);
+        // Brighter areas produce longer continuous vertical rods; edges produce crisp shorter bars
+        const baseLen = 3 + ((c * 7 + r * 3 + 17) & 3) + Math.round(midLum * 3);
+        const segLen = clamp(baseLen, 3, 8);
+        const rStart = Math.max(0, r);
+        const rEnd = Math.min(rows, r + segLen);
+        r += segLen + 1; // 1-row dark break between elongated rods
 
-        if (lum < 0.065) continue;
+        if (rEnd <= rStart) continue;
 
-        const cellY = rect.y + r * rowStep;
+        let sumLum = 0;
+        let peakLum = 0;
+        const count = rEnd - rStart;
+        for (let k = rStart; k < rEnd; k += 1) {
+          const idx = k * cols + c;
+          const v = lerp(prevGrid[idx] || 0, currGrid[idx] || 0, morphT);
+          sumLum += v;
+          if (v > peakLum) peakLum = v;
+        }
 
-        // Pointer disturbance locally fractures revealed sculpture into dancing chromatic bars
+        const transitionPulse = (1 - band.strength) * 0.16;
+        const lum = clamp(((sumLum / count) * 0.65 + peakLum * 0.35) * (1 + audioBoost + transitionPulse), 0, 1);
+        if (lum < 0.068) continue;
+
+        const nyMid = ((rStart + rEnd) * 0.5) / rows;
+        const segTopY = rect.y + rStart * rowStep;
+        const segMidY = rect.y + nyMid * rect.h;
+        const segH = Math.max(3, (rEnd - rStart) * rowStep - gapPx);
+
+        // Spring-damped pointer wake locally fractures revealed sculpture into dancing rods
         let pointerDisturb = 0;
         if (this.pointer.strength > 0.02) {
-          const dx = colX - this.pointer.x;
-          const dy = cellY - this.pointer.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 135) {
-            pointerDisturb = (1 - smoothstep(18, 135, dist)) * this.pointer.strength;
+          const dist = Math.hypot(colX - this.pointer.x, segMidY - this.pointer.y);
+          if (dist < 140) {
+            pointerDisturb = (1 - smoothstep(18, 140, dist)) * this.pointer.strength;
           }
         }
 
-        // Determine if this cell lies in the equalizer zone vs already revealed crisp zone
-        const distFromSplit = band.isBottomRevealed ? band.splitY - ny : ny - band.splitY;
-        const frontierZone = smoothstep(-0.11, 0.055, distFromSplit);
+        const distFromSplit = band.isBottomRevealed ? band.splitY - nyMid : nyMid - band.splitY;
+        const frontierZone = smoothstep(-0.10, 0.055, distFromSplit);
         const barVisibility = clamp(
           Math.max(1 - band.strength, frontierZone, pointerDisturb),
           0,
@@ -434,11 +520,6 @@ export class EqualizerStage {
         );
 
         if (barVisibility <= 0.04) continue;
-
-        // Vertical segmented bar rhythm (authentic equalizer dash pattern)
-        const dashWave = (ny * 26 + cascadeShift * 0.35 + rowPhase) % 1;
-        const dashDuty = lerp(0.56, 0.90, lum);
-        if (dashWave > dashDuty && barVisibility < 0.85) continue;
 
         // Color assignment: white luminous core + warm left/lower flank + cool right/upper flank
         const edgeFactor = clamp(
@@ -459,17 +540,14 @@ export class EqualizerStage {
           rgb = samplePalette(COOL_STOPS, t);
         }
 
-        const whiteness = clamp(smoothstep(0.45, 0.86, lum) * (1 - edgeFactor * 0.65), 0, 1);
+        const whiteness = clamp(smoothstep(0.44, 0.85, lum) * (1 - edgeFactor * 0.65), 0, 1);
         const rCol = Math.round(lerp(rgb[0], 255, whiteness));
         const gCol = Math.round(lerp(rgb[1], 255, whiteness));
         const bCol = Math.round(lerp(rgb[2], 255, whiteness));
 
-        const alpha = clamp(lum * 1.25 * barVisibility * (0.85 + audioEnergy * 0.3), 0, 1);
-        const segH = Math.max(2, rowStep * (0.72 + lum * 0.55));
-        const jitterY = this.reducedMotion ? 0 : Math.sin(timeSec * 3.4 + c * 0.7 + r * 0.2) * (1 - band.strength) * 2.2;
-
+        const alpha = clamp(lum * 1.24 * barVisibility * (0.88 + audioEnergy * 0.28), 0, 1);
         ctx.fillStyle = `rgba(${rCol}, ${gCol}, ${bCol}, ${alpha.toFixed(3)})`;
-        ctx.fillRect(colX, cellY + jitterY, barW, segH);
+        ctx.fillRect(colX, segTopY + cascadePx, barW, segH);
       }
     }
 
@@ -489,5 +567,12 @@ export class EqualizerStage {
     bottomGrad.addColorStop(1, '#0F0F13');
     ctx.fillStyle = bottomGrad;
     ctx.fillRect(0, height - 96, width, 96);
+
+    this.onFrame({
+      progress: this.getProgress(),
+      energy: audioEnergy,
+      transitionIntensity: clamp(1 - avgRevealStrength, 0, 1),
+      timeSec,
+    });
   }
 }
